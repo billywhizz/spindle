@@ -1,0 +1,37 @@
+#!/bin/bash
+STIME=${STIME:=30}
+FREQ=${FREQ:=4000}
+COLORS=${COLORS:=js}
+RUNTIME=${RUNTIME:=spin}
+svg=$RUNTIME-perf.svg
+_term() { 
+  echo "Caught SIGTERM signal!" 
+  kill -TERM "$pid" 2>/dev/null
+}
+trap _term SIGTERM
+dest="/tmp/FlameGraph"
+if [ ! -d "/tmp/FlameGraph" ]; then
+  echo "installing flamegraph in /tmp/FlameGraph"
+  mkdir -p $dest
+  curl -L -o /tmp/FlameGraph/stackcollapse.pl https://raw.githubusercontent.com/brendangregg/FlameGraph/v1.0/stackcollapse-perf.pl  
+  curl -L -o /tmp/FlameGraph/flamegraph.pl https://raw.githubusercontent.com/brendangregg/FlameGraph/v1.0/flamegraph.pl  
+fi
+wd=$(pwd)
+rm -f $svg
+$RUNTIME --perf-basic-prof $@ 1>/dev/null 2>/dev/null & 
+pid=$!
+echo "running perf for $STIME seconds"
+sudo perf record -F $FREQ --call-graph dwarf -p $pid -g -- sleep $STIME
+sudo perf script > out.stack
+perl $dest/stackcollapse.pl --kernel < $wd/out.stack | perl $dest/flamegraph.pl -width 1600 --colors $COLORS --cp > $wd/$svg
+echo "perf complete, killing $pid"
+kill -9 $pid 2>/dev/null
+wait $pid 2>/dev/null
+sudo rm -f /tmp/perf-*.map
+rm -f isolate-*.log
+rm -f out.stack
+sudo rm -f perf.data.old
+sudo rm -f perf.data
+sudo rm -f palette.map
+echo done
+#google-chrome-stable --no-sandbox --incognito $svg

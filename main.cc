@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
   }
   V8::Initialize();
   register_builtins();
-  NAMESPACE::CreateIsolate(argc, argv, smol_js, smol_js_len, NAMESPACE::hrtime(), GLOBALOBJ);
+  spin::CreateIsolate(argc, argv, smol_js, smol_js_len, spin::hrtime(), GLOBALOBJ);
   V8::Dispose();
   platform.reset();
   return 0;

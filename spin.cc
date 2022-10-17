@@ -1,14 +1,15 @@
 #include "spin.h"
 
-std::map<std::string, NAMESPACE::builtin*> NAMESPACE::builtins;
-std::map<std::string, NAMESPACE::register_plugin> NAMESPACE::modules;
+std::map<std::string, spin::builtin*> spin::builtins;
+std::map<std::string, spin::register_plugin> spin::modules;
 uint32_t scriptId = 1;
 clock_t clock_id = CLOCK_MONOTONIC;
-std::map<int, NAMESPACE::rawBuffer*> buffers;
+std::map<int, spin::rawBuffer*> buffers;
 int bcount = 0;
+struct timespec* hrtimeptr;
 
 // todo: do this in js and keep the fd open
-ssize_t NAMESPACE::process_memory_usage() {
+ssize_t spin::process_memory_usage() {
   char buf[1024];
   const char* s = NULL;
   ssize_t n = 0;
@@ -49,13 +50,13 @@ err:
   return 0;
 }
 
-uint64_t NAMESPACE::hrtime() {
+uint64_t spin::hrtime() {
   struct timespec t;
   if (clock_gettime(clock_id, &t)) return 0;
   return (t.tv_sec * (uint64_t) 1e9) + t.tv_nsec;
 }
 
-void NAMESPACE::builtins_add (const char* name, const char* source, 
+void spin::builtins_add (const char* name, const char* source, 
   unsigned int size) {
   struct builtin* b = new builtin();
   b->size = size;
@@ -63,28 +64,28 @@ void NAMESPACE::builtins_add (const char* name, const char* source,
   builtins[name] = b;
 }
 
-void NAMESPACE::SET_METHOD(Isolate *isolate, Local<ObjectTemplate> 
+void spin::SET_METHOD(Isolate *isolate, Local<ObjectTemplate> 
   recv, const char *name, FunctionCallback callback) {
   recv->Set(String::NewFromUtf8(isolate, name, 
     NewStringType::kInternalized).ToLocalChecked(), 
     FunctionTemplate::New(isolate, callback));
 }
 
-void NAMESPACE::SET_MODULE(Isolate *isolate, Local<ObjectTemplate> 
+void spin::SET_MODULE(Isolate *isolate, Local<ObjectTemplate> 
   recv, const char *name, Local<ObjectTemplate> module) {
   recv->Set(String::NewFromUtf8(isolate, name, 
     NewStringType::kInternalized).ToLocalChecked(), 
     module);
 }
 
-void NAMESPACE::SET_VALUE(Isolate *isolate, Local<ObjectTemplate> 
+void spin::SET_VALUE(Isolate *isolate, Local<ObjectTemplate> 
   recv, const char *name, Local<Value> value) {
   recv->Set(String::NewFromUtf8(isolate, name, 
     NewStringType::kInternalized).ToLocalChecked(), 
     value);
 }
 
-void NAMESPACE::PrintStackTrace(Isolate* isolate, const TryCatch& try_catch) {
+void spin::PrintStackTrace(Isolate* isolate, const TryCatch& try_catch) {
   Local<Message> message = try_catch.Message();
   Local<StackTrace> stack = message->GetStackTrace();
   Local<Value> scriptName = message->GetScriptResourceName();
@@ -121,7 +122,7 @@ void NAMESPACE::PrintStackTrace(Isolate* isolate, const TryCatch& try_catch) {
   fflush(stderr);
 }
 
-void NAMESPACE::PromiseRejectCallback(PromiseRejectMessage data) {
+void spin::PromiseRejectCallback(PromiseRejectMessage data) {
   if (data.GetEvent() == v8::kPromiseRejectAfterResolved ||
       data.GetEvent() == v8::kPromiseResolveAfterResolved) {
     return;
@@ -164,7 +165,7 @@ void NAMESPACE::PromiseRejectCallback(PromiseRejectMessage data) {
   }
 }
 
-void NAMESPACE::FreeMemory(void* buf, size_t length, void* data) {
+void spin::FreeMemory(void* buf, size_t length, void* data) {
   free(buf);
 }
 
@@ -173,7 +174,7 @@ char* readFile(char filename[]) {
   std::ifstream file;
   file.open(filename, std::ifstream::ate);
   if (!file) {
-    NAMESPACE::builtin* b = NAMESPACE::builtins[filename];
+    spin::builtin* b = spin::builtins[filename];
     if (b != nullptr) {
       char* contents = (char*)calloc(1, b->size);
       memcpy(contents, b->source, b->size);
@@ -197,9 +198,9 @@ v8::MaybeLocal<v8::Module> loadModule(char code[],
   v8::Local<v8::String> vcode =
       v8::String::NewFromUtf8(cx->GetIsolate(), code).ToLocalChecked();
   v8::Local<v8::PrimitiveArray> opts =
-      v8::PrimitiveArray::New(cx->GetIsolate(), NAMESPACE::HostDefinedOptions::kLength);
-  opts->Set(cx->GetIsolate(), NAMESPACE::HostDefinedOptions::kType,
-                            v8::Number::New(cx->GetIsolate(), NAMESPACE::ScriptType::kModule));
+      v8::PrimitiveArray::New(cx->GetIsolate(), spin::HostDefinedOptions::kLength);
+  opts->Set(cx->GetIsolate(), spin::HostDefinedOptions::kType,
+                            v8::Number::New(cx->GetIsolate(), spin::ScriptType::kModule));
   v8::ScriptOrigin origin(cx->GetIsolate(), v8::String::NewFromUtf8(cx->GetIsolate(), name).ToLocalChecked(), // resource name
     0, // line offset
     0,  // column offset
@@ -217,7 +218,7 @@ v8::MaybeLocal<v8::Module> loadModule(char code[],
   return mod;
 }
 
-v8::MaybeLocal<v8::Module> NAMESPACE::OnModuleInstantiate(v8::Local<v8::Context> context,
+v8::MaybeLocal<v8::Module> spin::OnModuleInstantiate(v8::Local<v8::Context> context,
   v8::Local<v8::String> specifier,
   v8::Local<v8::FixedArray> import_assertions, 
   v8::Local<v8::Module> referrer) {
@@ -232,7 +233,7 @@ v8::Local<v8::Module> checkModule(v8::MaybeLocal<v8::Module> maybeModule,
     printf("Error loading module!\n");
     exit(EXIT_FAILURE);
   }
-  v8::Maybe<bool> result = mod->InstantiateModule(cx, NAMESPACE::OnModuleInstantiate);
+  v8::Maybe<bool> result = mod->InstantiateModule(cx, spin::OnModuleInstantiate);
   if (result.IsNothing()) {
     printf("\nCan't instantiate module.\n");
     exit(EXIT_FAILURE);
@@ -281,7 +282,7 @@ void cleanupIsolate (v8::Isolate* isolate) {
   isolate->Dispose();
 }
 
-int NAMESPACE::CreateIsolate(int argc, char** argv, 
+int spin::CreateIsolate(int argc, char** argv, 
   const char* main_src, unsigned int main_len, 
   const char* js, unsigned int js_len, struct iovec* buf, int fd,
   uint64_t start, const char* globalobj, const char* scriptname) {
@@ -300,7 +301,7 @@ int NAMESPACE::CreateIsolate(int argc, char** argv,
       StackTrace::kDetailed);
     Local<ObjectTemplate> global = ObjectTemplate::New(isolate);
     Local<ObjectTemplate> runtime = ObjectTemplate::New(isolate);
-    NAMESPACE::Init(isolate, runtime);
+    spin::Init(isolate, runtime);
     global->Set(String::NewFromUtf8(isolate, globalobj, 
       NewStringType::kInternalized, strnlen(globalobj, 256)).ToLocalChecked(), runtime);
     Local<Context> context = Context::New(isolate, NULL, global);
@@ -348,9 +349,9 @@ int NAMESPACE::CreateIsolate(int argc, char** argv,
     }
     TryCatch try_catch(isolate);
     Local<v8::PrimitiveArray> opts =
-        v8::PrimitiveArray::New(isolate, NAMESPACE::HostDefinedOptions::kLength);
-    opts->Set(isolate, NAMESPACE::HostDefinedOptions::kType, 
-      v8::Number::New(isolate, NAMESPACE::ScriptType::kModule));
+        v8::PrimitiveArray::New(isolate, spin::HostDefinedOptions::kLength);
+    opts->Set(isolate, spin::HostDefinedOptions::kType, 
+      v8::Number::New(isolate, spin::ScriptType::kModule));
     ScriptOrigin baseorigin(
       isolate,
       String::NewFromUtf8(isolate, scriptname, NewStringType::kInternalized, strnlen(scriptname, 1024)).ToLocalChecked(),
@@ -373,7 +374,7 @@ int NAMESPACE::CreateIsolate(int argc, char** argv,
       PrintStackTrace(isolate, try_catch);
       return 1;
     }
-    Maybe<bool> ok2 = module->InstantiateModule(context, NAMESPACE::OnModuleInstantiate);
+    Maybe<bool> ok2 = module->InstantiateModule(context, spin::OnModuleInstantiate);
     if (ok2.IsNothing()) {
       if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
         try_catch.ReThrow();
@@ -396,7 +397,7 @@ int NAMESPACE::CreateIsolate(int argc, char** argv,
         statusCode = result.ToLocalChecked()->Uint32Value(context).ToChecked();
       }
       if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
-        NAMESPACE::PrintStackTrace(isolate, try_catch);
+        spin::PrintStackTrace(isolate, try_catch);
         return 2;
       }
       statusCode = result.ToLocalChecked()->Uint32Value(context).ToChecked();
@@ -408,12 +409,12 @@ int NAMESPACE::CreateIsolate(int argc, char** argv,
   return statusCode;
 }
 
-int NAMESPACE::CreateIsolate(int argc, char** argv, const char* main_src, 
+int spin::CreateIsolate(int argc, char** argv, const char* main_src, 
   unsigned int main_len, uint64_t start, const char* globalobj) {
   return CreateIsolate(argc, argv, main_src, main_len, NULL, 0, NULL, 0, start, globalobj, "main.js");
 }
 
-void NAMESPACE::Print(const FunctionCallbackInfo<Value> &args) {
+void spin::Print(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   if (args[0].IsEmpty()) return;
   String::Utf8Value str(args.GetIsolate(), args[0]);
@@ -429,7 +430,7 @@ void NAMESPACE::Print(const FunctionCallbackInfo<Value> &args) {
   }
 }
 
-void NAMESPACE::Error(const FunctionCallbackInfo<Value> &args) {
+void spin::Error(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   if (args[0].IsEmpty()) return;
   String::Utf8Value str(args.GetIsolate(), args[0]);
@@ -445,14 +446,14 @@ void NAMESPACE::Error(const FunctionCallbackInfo<Value> &args) {
   }
 }
 
-void NAMESPACE::Load(const FunctionCallbackInfo<Value> &args) {
+void spin::Load(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
   Local<ObjectTemplate> exports = ObjectTemplate::New(isolate);
   if (args[0]->IsString()) {
     String::Utf8Value name(isolate, args[0]);
-    auto iter = NAMESPACE::modules.find(*name);
-    if (iter == NAMESPACE::modules.end()) {
+    auto iter = spin::modules.find(*name);
+    if (iter == spin::modules.end()) {
       return;
     } else {
       register_plugin _init = (*iter->second);
@@ -469,10 +470,10 @@ void NAMESPACE::Load(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(exports->NewInstance(context).ToLocalChecked());
 }
 
-void NAMESPACE::Builtin(const FunctionCallbackInfo<Value> &args) {
+void spin::Builtin(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   String::Utf8Value name(isolate, args[0]);
-  NAMESPACE::builtin* b = builtins[*name];
+  spin::builtin* b = builtins[*name];
   if (b == nullptr) {
     args.GetReturnValue().Set(Null(isolate));
     return;
@@ -488,9 +489,9 @@ void NAMESPACE::Builtin(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(ab);
 }
 
-void NAMESPACE::MemoryUsage(const FunctionCallbackInfo<Value> &args) {
+void spin::MemoryUsage(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  ssize_t rss = NAMESPACE::process_memory_usage();
+  ssize_t rss = spin::process_memory_usage();
   HeapStatistics v8_heap_stats;
   isolate->GetHeapStatistics(&v8_heap_stats);
   Local<BigUint64Array> array;
@@ -520,7 +521,7 @@ void NAMESPACE::MemoryUsage(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(array);
 }
 
-void NAMESPACE::Builtins(const FunctionCallbackInfo<Value> &args) {
+void spin::Builtins(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
   Local<Array> b = Array::New(isolate);
@@ -532,7 +533,7 @@ void NAMESPACE::Builtins(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(b);
 }
 
-void NAMESPACE::Modules(const FunctionCallbackInfo<Value> &args) {
+void spin::Modules(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
   Local<Array> m = Array::New(isolate);
@@ -544,11 +545,11 @@ void NAMESPACE::Modules(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(m);
 }
 
-void NAMESPACE::NextTick(const FunctionCallbackInfo<Value>& args) {
+void spin::NextTick(const FunctionCallbackInfo<Value>& args) {
   args.GetIsolate()->EnqueueMicrotask(args[0].As<Function>());
 }
 
-void NAMESPACE::DLOpen(const FunctionCallbackInfo<Value> &args) {
+void spin::DLOpen(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   int mode = RTLD_LAZY;
   void* handle;
@@ -567,7 +568,7 @@ void NAMESPACE::DLOpen(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)handle));
 }
 
-void NAMESPACE::DLSym(const FunctionCallbackInfo<Value> &args) {
+void spin::DLSym(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<BigInt> address64 = Local<BigInt>::Cast(args[0]);
   String::Utf8Value name(isolate, args[1]);
@@ -580,7 +581,7 @@ void NAMESPACE::DLSym(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)ptr));
 }
 
-void NAMESPACE::DLError(const FunctionCallbackInfo<Value> &args) {
+void spin::DLError(const FunctionCallbackInfo<Value> &args) {
   char* err = dlerror();
   if (err == NULL) {
     args.GetReturnValue().Set(v8::Null(args.GetIsolate()));
@@ -590,55 +591,17 @@ void NAMESPACE::DLError(const FunctionCallbackInfo<Value> &args) {
     NewStringType::kNormal).ToLocalChecked());
 }
 
-void NAMESPACE::DLClose(const FunctionCallbackInfo<Value> &args) {
+void spin::DLClose(const FunctionCallbackInfo<Value> &args) {
   Local<BigInt> address64 = Local<BigInt>::Cast(args[0]);
   void* handle = reinterpret_cast<void*>(address64->Uint64Value());
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), dlclose(handle)));
 }
 
-v8::CTypeInfo* CTypeFromV8 (uint8_t v8Type) {
-  if (v8Type == NAMESPACE::FastTypes::boolean) return new v8::CTypeInfo(v8::CTypeInfo::Type::kBool);
-
-  if (v8Type == NAMESPACE::FastTypes::i8) return new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
-  if (v8Type == NAMESPACE::FastTypes::i16) return new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
-  if (v8Type == NAMESPACE::FastTypes::i32) return new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
-
-  if (v8Type == NAMESPACE::FastTypes::u8) return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
-  if (v8Type == NAMESPACE::FastTypes::u16) return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
-  if (v8Type == NAMESPACE::FastTypes::u32) return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
-  if (v8Type == NAMESPACE::FastTypes::f32) return new v8::CTypeInfo(v8::CTypeInfo::Type::kFloat32);
-  if (v8Type == NAMESPACE::FastTypes::f64) return new v8::CTypeInfo(v8::CTypeInfo::Type::kFloat64);
-  if (v8Type == NAMESPACE::FastTypes::empty) return new v8::CTypeInfo(v8::CTypeInfo::Type::kVoid);
-
-  if (v8Type == NAMESPACE::FastTypes::i64) return new v8::CTypeInfo(v8::CTypeInfo::Type::kInt64);
-
-  if (v8Type == NAMESPACE::FastTypes::u64) return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
-  //if (v8Type == NAMESPACE::FastTypes::u64) {
-  //  return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint8, v8::CTypeInfo::SequenceType::kIsTypedArray, v8::CTypeInfo::Flags::kNone);
-  //}
-
-  if (v8Type == NAMESPACE::FastTypes::iSize) return new v8::CTypeInfo(v8::CTypeInfo::Type::kInt64);
-
-  if (v8Type == NAMESPACE::FastTypes::uSize) return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
-  if (v8Type == NAMESPACE::FastTypes::pointer) return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
-  if (v8Type == NAMESPACE::FastTypes::function) return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
-
-  if (v8Type == NAMESPACE::FastTypes::buffer) {
-    return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint8, v8::CTypeInfo::SequenceType::kIsTypedArray, v8::CTypeInfo::Flags::kNone);
-  }
-
-  if (v8Type == NAMESPACE::FastTypes::u32array) {
-    return new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32, v8::CTypeInfo::SequenceType::kIsTypedArray, v8::CTypeInfo::Flags::kNone);
-  }
-
-  return new v8::CTypeInfo(v8::CTypeInfo::Type::kVoid);  
-}
-
-void NAMESPACE::GetAddress(const FunctionCallbackInfo<Value> &args) {
+void spin::GetAddress(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), (uint64_t)args[0].As<ArrayBuffer>()->Data()));
 }
 
-void NAMESPACE::Calloc(const FunctionCallbackInfo<Value> &args) {
+void spin::Calloc(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   size_t count = Local<Integer>::Cast(args[0])->Value();
   size_t size = 0;
@@ -669,20 +632,20 @@ void NAMESPACE::Calloc(const FunctionCallbackInfo<Value> &args) {
   std::unique_ptr<BackingStore> backing;
   if (shared) {
     backing = SharedArrayBuffer::NewBackingStore(chunk, count * size, 
-          NAMESPACE::FreeMemory, nullptr);
+          spin::FreeMemory, nullptr);
     Local<SharedArrayBuffer> ab =
         SharedArrayBuffer::New(isolate, std::move(backing));
     args.GetReturnValue().Set(ab);
   } else {
     backing = ArrayBuffer::NewBackingStore(chunk, count * size, 
-        NAMESPACE::FreeMemory, nullptr);
+        spin::FreeMemory, nullptr);
     Local<ArrayBuffer> ab =
         ArrayBuffer::New(isolate, std::move(backing));
     args.GetReturnValue().Set(ab);
   }
 }
 
-void NAMESPACE::Compile(const FunctionCallbackInfo<Value> &args) {
+void spin::Compile(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
   TryCatch try_catch(isolate);
@@ -736,7 +699,7 @@ void NAMESPACE::Compile(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(fn);
 }
 
-void NAMESPACE::ReadFile(const FunctionCallbackInfo<Value> &args) {
+void spin::ReadFile(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   String::Utf8Value name(isolate, args[1]);
   char* contents = readFile(*name);
@@ -745,7 +708,7 @@ void NAMESPACE::ReadFile(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(source);
 }
 
-void NAMESPACE::ReadString(const FunctionCallbackInfo<Value> &args) {
+void spin::ReadString(const FunctionCallbackInfo<Value> &args) {
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   char *data = static_cast<char *>(ab->Data());
   int argc = args.Length();
@@ -762,7 +725,7 @@ void NAMESPACE::ReadString(const FunctionCallbackInfo<Value> &args) {
     NewStringType::kNormal, len).ToLocalChecked());
 }
 
-void NAMESPACE::ReadMemory(const FunctionCallbackInfo<Value> &args) {
+void spin::ReadMemory(const FunctionCallbackInfo<Value> &args) {
   Local<BigInt> start64 = Local<BigInt>::Cast(args[0]);
   Local<BigInt> end64 = Local<BigInt>::Cast(args[1]);
   const uint64_t size = end64->Uint64Value() - start64->Uint64Value();
@@ -778,17 +741,17 @@ void NAMESPACE::ReadMemory(const FunctionCallbackInfo<Value> &args) {
     return;
   }
   std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
-      start, size, NAMESPACE::FreeMemory, nullptr);
+      start, size, spin::FreeMemory, nullptr);
   args.GetReturnValue().Set(ArrayBuffer::New(args.GetIsolate(), std::move(backing)));
 }
 
-void NAMESPACE::Utf8Length(const FunctionCallbackInfo<Value> &args) {
+void spin::Utf8Length(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   args.GetReturnValue().Set(Integer::New(isolate, 
     args[0].As<String>()->Utf8Length(isolate)));
 }
 
-void NAMESPACE::RawBuffer(const FunctionCallbackInfo<Value> &args) {
+void spin::RawBuffer(const FunctionCallbackInfo<Value> &args) {
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   Local<ArrayBuffer> rb = args[1].As<ArrayBuffer>();
   rawBuffer* buf = static_cast<rawBuffer*>(rb->Data());
@@ -801,7 +764,7 @@ void NAMESPACE::RawBuffer(const FunctionCallbackInfo<Value> &args) {
   bcount += 1;
 }
 
-void NAMESPACE::WriteLatin1(const FunctionCallbackInfo<Value> &args) {
+void spin::WriteLatin1(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
   buf->written = args[1].As<String>()->WriteOneByte(args.GetIsolate(), (uint8_t*)buf->data, 0, buf->len, 
     v8::String::HINT_MANY_WRITES_EXPECTED | 
@@ -809,7 +772,7 @@ void NAMESPACE::WriteLatin1(const FunctionCallbackInfo<Value> &args) {
   );
 }
 
-void NAMESPACE::WriteUtf8(const FunctionCallbackInfo<Value> &args) {
+void spin::WriteUtf8(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
   buf->written = args[1].As<String>()->WriteUtf8(args.GetIsolate(), (char*)buf->data, buf->len, &buf->read, 
     v8::String::HINT_MANY_WRITES_EXPECTED | 
@@ -818,7 +781,7 @@ void NAMESPACE::WriteUtf8(const FunctionCallbackInfo<Value> &args) {
   );
 }
 
-void NAMESPACE::WriteUtf16(const FunctionCallbackInfo<Value> &args) {
+void spin::WriteUtf16(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
   buf->written = args[1].As<String>()->Write(args.GetIsolate(), (uint16_t*)buf->data, 0, buf->len, 
     v8::String::HINT_MANY_WRITES_EXPECTED | 
@@ -826,25 +789,45 @@ void NAMESPACE::WriteUtf16(const FunctionCallbackInfo<Value> &args) {
   );
 }
 
-void NAMESPACE::ReadLatin1(const FunctionCallbackInfo<Value> &args) {
+void spin::ReadLatin1(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
   args.GetReturnValue().Set(String::NewFromOneByte(args.GetIsolate(), (uint8_t*)buf->data, 
     NewStringType::kNormal, buf->written).ToLocalChecked());
 }
 
-void NAMESPACE::ReadUtf8(const FunctionCallbackInfo<Value> &args) {
+void spin::ReadUtf8(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
   args.GetReturnValue().Set(String::NewFromUtf8(args.GetIsolate(), (char*)buf->data, 
     NewStringType::kNormal, buf->written).ToLocalChecked());
 }
 
-void NAMESPACE::ReadUtf16(const FunctionCallbackInfo<Value> &args) {
+void spin::ReadUtf16(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
   args.GetReturnValue().Set(String::NewFromTwoByte(args.GetIsolate(), (uint16_t*)buf->data, 
     NewStringType::kNormal, buf->written).ToLocalChecked());
 }
 
-void NAMESPACE::Init(Isolate* isolate, Local<ObjectTemplate> target) {
+void spin::PID(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getpid()));
+}
+
+uint32_t PIDFast(v8::Local<v8::Object> receiver) {
+  return getpid();
+}
+
+void spin::HRTime(const FunctionCallbackInfo<Value> &args) {
+  if (args.Length() > 0) {
+    Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+    hrtimeptr = (struct timespec*)ab->Data();
+  }
+  clock_gettime(clock_id, hrtimeptr);
+}
+
+void HRTimeFast(v8::Local<v8::Object> receiver) {
+  clock_gettime(clock_id, hrtimeptr);
+}
+
+void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> version = ObjectTemplate::New(isolate);
   SET_VALUE(isolate, version, GLOBALOBJ, String::NewFromUtf8Literal(isolate, 
     VERSION));
@@ -904,6 +887,9 @@ void NAMESPACE::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, target, "utf8Length", Utf8Length);
   SET_METHOD(isolate, target, "print", Print);
   SET_METHOD(isolate, target, "error", Error);
+
+  SET_FAST_METHOD(isolate, target, "pid", PIDFast, PID);
+  SET_FAST_METHOD(isolate, target, "hrtime", HRTimeFast, HRTime);
 
 #ifdef __BYTE_ORDER
   // These don't work on alpine. will have to investigate why not

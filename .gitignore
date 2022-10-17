@@ -2,3 +2,4 @@ deps
 *.o
 spin
 *.debug
+*.so

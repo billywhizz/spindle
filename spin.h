@@ -1,5 +1,4 @@
-#ifndef JUST_SMOL_H
-#define JUST_SMOL_H
+#pragma once
 
 #include <v8.h>
 #include <libplatform/libplatform.h>
@@ -10,7 +9,7 @@
 #include <v8-fast-api-calls.h>
 #include <dlfcn.h>
 
-namespace NAMESPACE {
+namespace spin {
 
 #define MICROS_PER_SEC 1e6
 
@@ -69,12 +68,6 @@ struct rawBuffer {
   uint8_t* data;
 };
 
-struct foreignFunction {
-	v8::Persistent<Function, v8::NonCopyablePersistentTraits<Function>> callback;
-  void* fast;
-  v8::CFunction* cfunc;
-};
-
 struct builtin {
   unsigned int size;
   const char* source;
@@ -84,27 +77,6 @@ enum ScriptType : int {
   kScript,
   kModule,
   kFunction,
-};
-
-enum FastTypes: int {
-  i8 = 1,
-  i16 = 2,
-  i32 = 3,
-  u8 = 4,
-  u16 = 5,
-  u32 = 6,
-  empty = 7,
-  f32 = 8,
-  f64 = 9,
-  u64 = 10,
-  i64 = 11,
-  iSize = 12,
-  uSize = 13,
-  pointer = 14,
-  buffer = 15,
-  function = 16,
-  u32array = 17,
-  boolean = 18
 };
 
 enum HostDefinedOptions : int {
@@ -165,6 +137,24 @@ void SET_FAST_METHOD(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, co
   );
 }
 
+template <typename F>
+void SET_FAST_METHOD2(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, const char * name, F* fastCFunc, v8::FunctionCallback slowFunc) {
+  v8::Local<v8::FunctionTemplate> funcTemplate = v8::FunctionTemplate::New(
+    isolate,
+    slowFunc,
+    v8::Local<v8::Value>(),
+    v8::Local<v8::Signature>(),
+    0,
+    v8::ConstructorBehavior::kThrow,
+    v8::SideEffectType::kHasSideEffect,
+    fastCFunc
+  );
+  exports->Set(
+    v8::String::NewFromUtf8(isolate, name).ToLocalChecked(),
+    funcTemplate
+  );
+}
+
 void MemoryUsage(const FunctionCallbackInfo<Value> &args);
 void Load(const FunctionCallbackInfo<Value> &args);
 void Builtin(const FunctionCallbackInfo<Value> &args);
@@ -200,8 +190,9 @@ void ReadLatin1(const FunctionCallbackInfo<Value> &args);
 
 void RawBuffer(const FunctionCallbackInfo<Value> &args);
 
+void PID(const FunctionCallbackInfo<Value> &args);
+void HRTime(const FunctionCallbackInfo<Value> &args);
+
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 
 }
-
-#endif

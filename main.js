@@ -49,8 +49,7 @@ global.console = {
 }
 
 global.onUnhandledRejection = err => {
-  spin.error(err.message)
-  spin.error(err.stack)
+  spin.error(`${AG}${err.message}${AD}\n${err.stack}`)
 }
 
 try {
