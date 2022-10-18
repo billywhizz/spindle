@@ -23,7 +23,7 @@ const api = {
   }
 }
 
-const includes = ['sys/epoll.h']
+const includes = ['sys/epoll.h', 'unistd.h']
 const name = 'loop'
 
 export { api, includes, name }

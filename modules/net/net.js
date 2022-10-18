@@ -63,7 +63,8 @@ const includes = [
   'netinet/tcp.h',
   'netinet/if_ether.h',
   'sys/types.h',
-  'sys/sendfile.h'
+  'sys/sendfile.h',
+  "unistd.h"
 ]
 const name = 'net'
 

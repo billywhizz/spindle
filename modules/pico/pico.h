@@ -46,8 +46,15 @@ struct httpResponse {
 #define Z_MAX_WINDOWBITS 15
 #define Z_DEFAULT_WINDOW_BITS 15
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 uint32_t zlib_deflate (uint8_t* src, uint32_t ssize, uint8_t* dest, uint32_t dsize);
 uint32_t zlib_inflate (uint8_t* src, uint32_t ssize, uint8_t* dest, uint32_t dsize);
 int parse_request(char* next, ssize_t bytes, httpRequest* req);
 int parse_response(char* next, ssize_t bytes, httpResponse* res);
 // we can do the routing inside c++ if we pre-define the routes
+#ifdef __cplusplus
+}
+#endif

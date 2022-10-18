@@ -1,54 +1,12 @@
 #include "spin.h"
 
+// todo - where to put these - threads
 std::map<std::string, spin::builtin*> spin::builtins;
 std::map<std::string, spin::register_plugin> spin::modules;
 uint32_t scriptId = 1;
 clock_t clock_id = CLOCK_MONOTONIC;
 std::map<int, spin::rawBuffer*> buffers;
 int bcount = 0;
-struct timespec* hrtimeptr;
-
-// todo: do this in js and keep the fd open
-ssize_t spin::process_memory_usage() {
-  char buf[1024];
-  const char* s = NULL;
-  ssize_t n = 0;
-  unsigned long val = 0;
-  int fd = 0;
-  int i = 0;
-  do {
-    fd = open("/proc/thread-self/stat", O_RDONLY);
-  } while (fd == -1 && errno == EINTR);
-  if (fd == -1) return (ssize_t)errno;
-  do
-    n = read(fd, buf, sizeof(buf) - 1);
-  while (n == -1 && errno == EINTR);
-  close(fd);
-  if (n == -1)
-    return (ssize_t)errno;
-  buf[n] = '\0';
-  s = strchr(buf, ' ');
-  if (s == NULL)
-    goto err;
-  s += 1;
-  if (*s != '(')
-    goto err;
-  s = strchr(s, ')');
-  if (s == NULL)
-    goto err;
-  for (i = 1; i <= 22; i++) {
-    s = strchr(s + 1, ' ');
-    if (s == NULL)
-      goto err;
-  }
-  errno = 0;
-  val = strtoul(s, NULL, 10);
-  if (errno != 0)
-    goto err;
-  return val * (unsigned long)getpagesize();
-err:
-  return 0;
-}
 
 uint64_t spin::hrtime() {
   struct timespec t;
@@ -198,19 +156,14 @@ v8::MaybeLocal<v8::Module> loadModule(char code[],
   v8::Local<v8::String> vcode =
       v8::String::NewFromUtf8(cx->GetIsolate(), code).ToLocalChecked();
   v8::Local<v8::PrimitiveArray> opts =
-      v8::PrimitiveArray::New(cx->GetIsolate(), spin::HostDefinedOptions::kLength);
+      v8::PrimitiveArray::New(cx->GetIsolate(), 
+      spin::HostDefinedOptions::kLength);
   opts->Set(cx->GetIsolate(), spin::HostDefinedOptions::kType,
-                            v8::Number::New(cx->GetIsolate(), spin::ScriptType::kModule));
-  v8::ScriptOrigin origin(cx->GetIsolate(), v8::String::NewFromUtf8(cx->GetIsolate(), name).ToLocalChecked(), // resource name
-    0, // line offset
-    0,  // column offset
-    true, // is shared cross-origin
-    -1,  // script id
-    v8::Local<v8::Value>(), // source map url
-    false, // is opaque
-    false, // is wasm
-    true, // is module
-    opts);
+                            v8::Number::New(cx->GetIsolate(), 
+                            spin::ScriptType::kModule));
+  v8::ScriptOrigin origin(cx->GetIsolate(), 
+    v8::String::NewFromUtf8(cx->GetIsolate(), name).ToLocalChecked(),
+    0, 0, true, -1, v8::Local<v8::Value>(), false, false, true, opts);
   v8::Context::Scope context_scope(cx);
   v8::ScriptCompiler::Source source(vcode, origin);
   v8::MaybeLocal<v8::Module> mod;
@@ -218,7 +171,7 @@ v8::MaybeLocal<v8::Module> loadModule(char code[],
   return mod;
 }
 
-v8::MaybeLocal<v8::Module> spin::OnModuleInstantiate(v8::Local<v8::Context> context,
+v8::MaybeLocal<v8::Module> spin::OnModuleInstantiate(Local<v8::Context> context,
   v8::Local<v8::String> specifier,
   v8::Local<v8::FixedArray> import_assertions, 
   v8::Local<v8::Module> referrer) {
@@ -303,7 +256,8 @@ int spin::CreateIsolate(int argc, char** argv,
     Local<ObjectTemplate> runtime = ObjectTemplate::New(isolate);
     spin::Init(isolate, runtime);
     global->Set(String::NewFromUtf8(isolate, globalobj, 
-      NewStringType::kInternalized, strnlen(globalobj, 256)).ToLocalChecked(), runtime);
+      NewStringType::kInternalized, strnlen(globalobj, 256)).ToLocalChecked(), 
+      runtime);
     Local<Context> context = Context::New(isolate, NULL, global);
     Context::Scope context_scope(context);
     isolate->SetPromiseRejectCallback(PromiseRejectCallback);
@@ -318,14 +272,15 @@ int spin::CreateIsolate(int argc, char** argv,
       "global", 
       NewStringType::kNormal), globalInstance).Check();
     Local<Value> obj = globalInstance->Get(context, 
-      String::NewFromUtf8(
-        isolate, globalobj, 
-        NewStringType::kInternalized, strnlen(globalobj, 256)).ToLocalChecked()).ToLocalChecked();
+      String::NewFromUtf8(isolate, globalobj, NewStringType::kInternalized, 
+        strnlen(globalobj, 256)).ToLocalChecked()).ToLocalChecked();
     Local<Object> runtimeInstance = Local<Object>::Cast(obj);
     if (buf != NULL) {
-      std::unique_ptr<BackingStore> backing = SharedArrayBuffer::NewBackingStore(
-          buf->iov_base, buf->iov_len, [](void*, size_t, void*){}, nullptr);
-      Local<SharedArrayBuffer> ab = SharedArrayBuffer::New(isolate, std::move(backing));
+      std::unique_ptr<BackingStore> backing = 
+        SharedArrayBuffer::NewBackingStore(buf->iov_base, buf->iov_len, 
+        [](void*, size_t, void*){}, nullptr);
+      Local<SharedArrayBuffer> ab = SharedArrayBuffer::New(isolate, 
+        std::move(backing));
       runtimeInstance->Set(context, String::NewFromUtf8Literal(isolate, 
         "buffer", NewStringType::kNormal), ab).Check();
     }
@@ -354,7 +309,8 @@ int spin::CreateIsolate(int argc, char** argv,
       v8::Number::New(isolate, spin::ScriptType::kModule));
     ScriptOrigin baseorigin(
       isolate,
-      String::NewFromUtf8(isolate, scriptname, NewStringType::kInternalized, strnlen(scriptname, 1024)).ToLocalChecked(),
+      String::NewFromUtf8(isolate, scriptname, NewStringType::kInternalized, 
+      strnlen(scriptname, 1024)).ToLocalChecked(),
       0, // line offset
       0,  // column offset
       false, // is shared cross-origin
@@ -374,7 +330,8 @@ int spin::CreateIsolate(int argc, char** argv,
       PrintStackTrace(isolate, try_catch);
       return 1;
     }
-    Maybe<bool> ok2 = module->InstantiateModule(context, spin::OnModuleInstantiate);
+    Maybe<bool> ok2 = module->InstantiateModule(context, 
+      spin::OnModuleInstantiate);
     if (ok2.IsNothing()) {
       if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
         try_catch.ReThrow();
@@ -411,7 +368,8 @@ int spin::CreateIsolate(int argc, char** argv,
 
 int spin::CreateIsolate(int argc, char** argv, const char* main_src, 
   unsigned int main_len, uint64_t start, const char* globalobj) {
-  return CreateIsolate(argc, argv, main_src, main_len, NULL, 0, NULL, 0, start, globalobj, "main.js");
+  return CreateIsolate(argc, argv, main_src, main_len, NULL, 0, NULL, 0, 
+    start, globalobj, "main.js");
 }
 
 void spin::Print(const FunctionCallbackInfo<Value> &args) {
@@ -485,40 +443,9 @@ void spin::Builtin(const FunctionCallbackInfo<Value> &args) {
   }
   std::unique_ptr<BackingStore> backing = SharedArrayBuffer::NewBackingStore(
       (void*)b->source, b->size, [](void*, size_t, void*){}, nullptr);
-  Local<SharedArrayBuffer> ab = SharedArrayBuffer::New(isolate, std::move(backing));
+  Local<SharedArrayBuffer> ab = SharedArrayBuffer::New(isolate, 
+    std::move(backing));
   args.GetReturnValue().Set(ab);
-}
-
-void spin::MemoryUsage(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  ssize_t rss = spin::process_memory_usage();
-  HeapStatistics v8_heap_stats;
-  isolate->GetHeapStatistics(&v8_heap_stats);
-  Local<BigUint64Array> array;
-  Local<ArrayBuffer> ab;
-  if (args.Length() > 0) {
-    array = args[0].As<BigUint64Array>();
-    ab = array->Buffer();
-  } else {
-    ab = ArrayBuffer::New(isolate, 16 * 8);
-    array = BigUint64Array::New(ab, 0, 16);
-  }
-  uint64_t *fields = static_cast<uint64_t *>(ab->Data());
-  fields[0] = rss;
-  fields[1] = v8_heap_stats.total_heap_size();
-  fields[2] = v8_heap_stats.used_heap_size();
-  fields[3] = v8_heap_stats.external_memory();
-  fields[4] = v8_heap_stats.does_zap_garbage();
-  fields[5] = v8_heap_stats.heap_size_limit();
-  fields[6] = v8_heap_stats.malloced_memory();
-  fields[7] = v8_heap_stats.number_of_detached_contexts();
-  fields[8] = v8_heap_stats.number_of_native_contexts();
-  fields[9] = v8_heap_stats.peak_malloced_memory();
-  fields[10] = v8_heap_stats.total_available_size();
-  fields[11] = v8_heap_stats.total_heap_size_executable();
-  fields[12] = v8_heap_stats.total_physical_size();
-  fields[13] = isolate->AdjustAmountOfExternalAllocatedMemory(0);
-  args.GetReturnValue().Set(array);
 }
 
 void spin::Builtins(const FunctionCallbackInfo<Value> &args) {
@@ -549,56 +476,9 @@ void spin::NextTick(const FunctionCallbackInfo<Value>& args) {
   args.GetIsolate()->EnqueueMicrotask(args[0].As<Function>());
 }
 
-void spin::DLOpen(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  int mode = RTLD_LAZY;
-  void* handle;
-  int argc = args.Length();
-  if (argc > 1) mode = Local<Integer>::Cast(args[1])->Value();
-  if (argc > 0) {
-    String::Utf8Value path(isolate, args[0]);
-    handle = dlopen(*path, mode);
-  } else {
-    handle = dlopen(NULL, mode);
-  }
-  if (handle == NULL) {
-    args.GetReturnValue().Set(v8::Null(isolate));
-    return;
-  }
-  args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)handle));
-}
-
-void spin::DLSym(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<BigInt> address64 = Local<BigInt>::Cast(args[0]);
-  String::Utf8Value name(isolate, args[1]);
-  void* handle = reinterpret_cast<void*>(address64->Uint64Value());
-  void* ptr = dlsym(handle, *name);
-  if (ptr == NULL) {
-    args.GetReturnValue().Set(v8::Null(isolate));
-    return;
-  }
-  args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)ptr));
-}
-
-void spin::DLError(const FunctionCallbackInfo<Value> &args) {
-  char* err = dlerror();
-  if (err == NULL) {
-    args.GetReturnValue().Set(v8::Null(args.GetIsolate()));
-    return;
-  }
-  args.GetReturnValue().Set(String::NewFromUtf8(args.GetIsolate(), err, 
-    NewStringType::kNormal).ToLocalChecked());
-}
-
-void spin::DLClose(const FunctionCallbackInfo<Value> &args) {
-  Local<BigInt> address64 = Local<BigInt>::Cast(args[0]);
-  void* handle = reinterpret_cast<void*>(address64->Uint64Value());
-  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), dlclose(handle)));
-}
-
 void spin::GetAddress(const FunctionCallbackInfo<Value> &args) {
-  args.GetReturnValue().Set(Number::New(args.GetIsolate(), (uint64_t)args[0].As<ArrayBuffer>()->Data()));
+  args.GetReturnValue().Set(Number::New(args.GetIsolate(), 
+    (uint64_t)args[0].As<ArrayBuffer>()->Data()));
 }
 
 void spin::Calloc(const FunctionCallbackInfo<Value> &args) {
@@ -704,27 +584,12 @@ void spin::ReadFile(const FunctionCallbackInfo<Value> &args) {
   String::Utf8Value name(isolate, args[1]);
   char* contents = readFile(*name);
   if (contents == NULL) return;
-  Local<String> source = String::NewFromUtf8(isolate, contents).ToLocalChecked();
+  Local<String> source = String::NewFromUtf8(isolate, contents)
+    .ToLocalChecked();
   args.GetReturnValue().Set(source);
 }
 
-void spin::ReadString(const FunctionCallbackInfo<Value> &args) {
-  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
-  char *data = static_cast<char *>(ab->Data());
-  int argc = args.Length();
-  int len = 0;
-  if (argc > 1) {
-    len = Local<Integer>::Cast(args[1])->Value();
-  } else {
-    len = ab->ByteLength();
-  }
-  int off = 0;
-  if (argc > 2) off = Local<Integer>::Cast(args[2])->Value();
-  char* source = data + off;
-  args.GetReturnValue().Set(String::NewFromUtf8(args.GetIsolate(), source, 
-    NewStringType::kNormal, len).ToLocalChecked());
-}
-
+// todo - change this - can it be a fast call?
 void spin::ReadMemory(const FunctionCallbackInfo<Value> &args) {
   Local<BigInt> start64 = Local<BigInt>::Cast(args[0]);
   Local<BigInt> end64 = Local<BigInt>::Cast(args[1]);
@@ -737,12 +602,14 @@ void spin::ReadMemory(const FunctionCallbackInfo<Value> &args) {
   if (free == 0) {
     std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
         start, size, [](void*, size_t, void*){}, nullptr);
-    args.GetReturnValue().Set(ArrayBuffer::New(args.GetIsolate(), std::move(backing)));
+    args.GetReturnValue().Set(ArrayBuffer::New(args.GetIsolate(), 
+      std::move(backing)));
     return;
   }
   std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
       start, size, spin::FreeMemory, nullptr);
-  args.GetReturnValue().Set(ArrayBuffer::New(args.GetIsolate(), std::move(backing)));
+  args.GetReturnValue().Set(ArrayBuffer::New(args.GetIsolate(), 
+    std::move(backing)));
 }
 
 void spin::Utf8Length(const FunctionCallbackInfo<Value> &args) {
@@ -766,7 +633,8 @@ void spin::RawBuffer(const FunctionCallbackInfo<Value> &args) {
 
 void spin::WriteLatin1(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
-  buf->written = args[1].As<String>()->WriteOneByte(args.GetIsolate(), (uint8_t*)buf->data, 0, buf->len, 
+  buf->written = args[1].As<String>()->WriteOneByte(args.GetIsolate(), 
+    (uint8_t*)buf->data, 0, buf->len, 
     v8::String::HINT_MANY_WRITES_EXPECTED | 
     v8::String::NO_NULL_TERMINATION
   );
@@ -774,16 +642,17 @@ void spin::WriteLatin1(const FunctionCallbackInfo<Value> &args) {
 
 void spin::WriteUtf8(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
-  buf->written = args[1].As<String>()->WriteUtf8(args.GetIsolate(), (char*)buf->data, buf->len, &buf->read, 
-    v8::String::HINT_MANY_WRITES_EXPECTED | 
-    v8::String::REPLACE_INVALID_UTF8 | 
+  buf->written = args[1].As<String>()->WriteUtf8(args.GetIsolate(), 
+    (char*)buf->data, buf->len, &buf->read, 
+    v8::String::HINT_MANY_WRITES_EXPECTED | v8::String::REPLACE_INVALID_UTF8 | 
     v8::String::NO_NULL_TERMINATION
   );
 }
 
 void spin::WriteUtf16(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
-  buf->written = args[1].As<String>()->Write(args.GetIsolate(), (uint16_t*)buf->data, 0, buf->len, 
+  buf->written = args[1].As<String>()->Write(args.GetIsolate(), 
+    (uint16_t*)buf->data, 0, buf->len, 
     v8::String::HINT_MANY_WRITES_EXPECTED | 
     v8::String::NO_NULL_TERMINATION
   );
@@ -791,40 +660,23 @@ void spin::WriteUtf16(const FunctionCallbackInfo<Value> &args) {
 
 void spin::ReadLatin1(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
-  args.GetReturnValue().Set(String::NewFromOneByte(args.GetIsolate(), (uint8_t*)buf->data, 
+  args.GetReturnValue().Set(String::NewFromOneByte(args.GetIsolate(), 
+    (uint8_t*)buf->data, 
     NewStringType::kNormal, buf->written).ToLocalChecked());
 }
 
 void spin::ReadUtf8(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
-  args.GetReturnValue().Set(String::NewFromUtf8(args.GetIsolate(), (char*)buf->data, 
+  args.GetReturnValue().Set(String::NewFromUtf8(args.GetIsolate(), 
+    (char*)buf->data, 
     NewStringType::kNormal, buf->written).ToLocalChecked());
 }
 
 void spin::ReadUtf16(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
-  args.GetReturnValue().Set(String::NewFromTwoByte(args.GetIsolate(), (uint16_t*)buf->data, 
+  args.GetReturnValue().Set(String::NewFromTwoByte(args.GetIsolate(), 
+    (uint16_t*)buf->data, 
     NewStringType::kNormal, buf->written).ToLocalChecked());
-}
-
-void spin::PID(const FunctionCallbackInfo<Value> &args) {
-  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getpid()));
-}
-
-uint32_t PIDFast(v8::Local<v8::Object> receiver) {
-  return getpid();
-}
-
-void spin::HRTime(const FunctionCallbackInfo<Value> &args) {
-  if (args.Length() > 0) {
-    Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
-    hrtimeptr = (struct timespec*)ab->Data();
-  }
-  clock_gettime(clock_id, hrtimeptr);
-}
-
-void HRTimeFast(v8::Local<v8::Object> receiver) {
-  clock_gettime(clock_id, hrtimeptr);
 }
 
 void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
@@ -833,70 +685,34 @@ void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
     VERSION));
   SET_VALUE(isolate, version, "v8", String::NewFromUtf8(isolate, 
     v8::V8::GetVersion()).ToLocalChecked());
-  Local<ObjectTemplate> kernel = ObjectTemplate::New(isolate);
-  utsname kernel_rec;
-  int rc = uname(&kernel_rec);
-  if (rc == 0) {
-    kernel->Set(String::NewFromUtf8Literal(isolate, "os", 
-      NewStringType::kNormal), String::NewFromUtf8(isolate, 
-      kernel_rec.sysname).ToLocalChecked());
-    kernel->Set(String::NewFromUtf8Literal(isolate, "release", 
-      NewStringType::kNormal), String::NewFromUtf8(isolate, 
-      kernel_rec.release).ToLocalChecked());
-    kernel->Set(String::NewFromUtf8Literal(isolate, "version", 
-      NewStringType::kNormal), String::NewFromUtf8(isolate, 
-      kernel_rec.version).ToLocalChecked());
-  }
-  version->Set(String::NewFromUtf8Literal(isolate, "kernel", 
-    NewStringType::kNormal), kernel);
   SET_MODULE(isolate, target, "version", version);
-
   SET_METHOD(isolate, target, "nextTick", NextTick);
-
   SET_METHOD(isolate, target, "compile", Compile);
-  SET_METHOD(isolate, target, "memoryUsage", MemoryUsage); // fast
-
   SET_METHOD(isolate, target, "builtin", Builtin);
   SET_METHOD(isolate, target, "builtins", Builtins);
   SET_METHOD(isolate, target, "modules", Modules);
   SET_METHOD(isolate, target, "load", Load);
-
   SET_METHOD(isolate, target, "readFile", ReadFile);
-
-  SET_METHOD(isolate, target, "dlopen", DLOpen);
-  SET_METHOD(isolate, target, "dlsym", DLSym);
-  SET_METHOD(isolate, target, "dlerror", DLError);
-  SET_METHOD(isolate, target, "dlclose", DLClose);
-
   SET_METHOD(isolate, target, "calloc", Calloc);
   SET_METHOD(isolate, target, "readMemory", ReadMemory);
   SET_METHOD(isolate, target, "getAddress", GetAddress);
-  SET_METHOD(isolate, target, "readString", ReadString);
   SET_METHOD(isolate, target, "rawBuffer", RawBuffer);
-
   SET_METHOD(isolate, target, "writeUtf8", WriteUtf8);
   SET_METHOD(isolate, target, "writeLatin1", WriteLatin1);
   SET_METHOD(isolate, target, "writeUtf16", WriteUtf16);
   SET_METHOD(isolate, target, "readUtf8", ReadUtf8);
   SET_METHOD(isolate, target, "readLatin1", ReadLatin1);
   SET_METHOD(isolate, target, "readUtf16", ReadUtf16);
-
-  // readUft8, writeUtf8, readString, writeString, readLatin1String, writeLatin1String
-  // C-versions - with/without null terminators
-  // ability to pass in an address and just read the bytes 
   SET_METHOD(isolate, target, "utf8Length", Utf8Length);
   SET_METHOD(isolate, target, "print", Print);
   SET_METHOD(isolate, target, "error", Error);
-
-  SET_FAST_METHOD(isolate, target, "pid", PIDFast, PID);
-  SET_FAST_METHOD(isolate, target, "hrtime", HRTimeFast, HRTime);
-
 #ifdef __BYTE_ORDER
   // These don't work on alpine. will have to investigate why not
-  SET_VALUE(isolate, target, "BYTE_ORDER", v8::Integer::New(isolate, __BYTE_ORDER));
-  SET_VALUE(isolate, target, "LITTLE_ENDIAN", v8::Integer::New(isolate, __LITTLE_ENDIAN));
-  SET_VALUE(isolate, target, "BIG_ENDIAN", v8::Integer::New(isolate, __BIG_ENDIAN));
+  SET_VALUE(isolate, target, "BYTE_ORDER", 
+    v8::Integer::New(isolate, __BYTE_ORDER));
+  SET_VALUE(isolate, target, "LITTLE_ENDIAN", 
+    v8::Integer::New(isolate, __LITTLE_ENDIAN));
+  SET_VALUE(isolate, target, "BIG_ENDIAN", 
+    v8::Integer::New(isolate, __BIG_ENDIAN));
 #endif
-  SET_VALUE(isolate, target, "RTLD_LAZY", v8::Integer::New(isolate, RTLD_LAZY));
-  SET_VALUE(isolate, target, "RTLD_NOW", v8::Integer::New(isolate, RTLD_NOW));
 }

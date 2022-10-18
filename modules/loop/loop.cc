@@ -1,6 +1,6 @@
-extern "C" {
+
 #include <sys/epoll.h>
-}
+#include <unistd.h>
 #include <spin.h>
 
 namespace spin {
@@ -79,7 +79,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rccreate = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infocreate = new v8::CFunctionInfo(*rccreate, 2, cargscreate);
   v8::CFunction* pFcreate = new v8::CFunction((const void*)&createFast, infocreate);
-  SET_FAST_METHOD2(isolate, module, "create", pFcreate, createSlow);
+  SET_FAST_METHOD(isolate, module, "create", pFcreate, createSlow);
 
   v8::CTypeInfo* cargsmodify = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsmodify[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -90,7 +90,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcmodify = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infomodify = new v8::CFunctionInfo(*rcmodify, 5, cargsmodify);
   v8::CFunction* pFmodify = new v8::CFunction((const void*)&modifyFast, infomodify);
-  SET_FAST_METHOD2(isolate, module, "modify", pFmodify, modifySlow);
+  SET_FAST_METHOD(isolate, module, "modify", pFmodify, modifySlow);
 
   v8::CTypeInfo* cargswait = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargswait[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -101,7 +101,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcwait = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infowait = new v8::CFunctionInfo(*rcwait, 5, cargswait);
   v8::CFunction* pFwait = new v8::CFunction((const void*)&waitFast, infowait);
-  SET_FAST_METHOD2(isolate, module, "wait", pFwait, waitSlow);
+  SET_FAST_METHOD(isolate, module, "wait", pFwait, waitSlow);
 
   v8::CTypeInfo* cargsclose = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsclose[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -109,7 +109,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcclose = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infoclose = new v8::CFunctionInfo(*rcclose, 2, cargsclose);
   v8::CFunction* pFclose = new v8::CFunction((const void*)&closeFast, infoclose);
-  SET_FAST_METHOD2(isolate, module, "close", pFclose, closeSlow);
+  SET_FAST_METHOD(isolate, module, "close", pFclose, closeSlow);
   SET_MODULE(isolate, target, "loop", module);
 }
 } // namespace loop

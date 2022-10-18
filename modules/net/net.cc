@@ -1,4 +1,4 @@
-extern "C" {
+
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
@@ -9,7 +9,7 @@ extern "C" {
 #include <netinet/if_ether.h>
 #include <sys/types.h>
 #include <sys/sendfile.h>
-}
+#include <unistd.h>
 #include <spin.h>
 
 namespace spin {
@@ -230,7 +230,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcsocket = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infosocket = new v8::CFunctionInfo(*rcsocket, 4, cargssocket);
   v8::CFunction* pFsocket = new v8::CFunction((const void*)&socketFast, infosocket);
-  SET_FAST_METHOD2(isolate, module, "socket", pFsocket, socketSlow);
+  SET_FAST_METHOD(isolate, module, "socket", pFsocket, socketSlow);
 
   v8::CTypeInfo* cargssetsockopt = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargssetsockopt[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -242,7 +242,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcsetsockopt = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infosetsockopt = new v8::CFunctionInfo(*rcsetsockopt, 6, cargssetsockopt);
   v8::CFunction* pFsetsockopt = new v8::CFunction((const void*)&setsockoptFast, infosetsockopt);
-  SET_FAST_METHOD2(isolate, module, "setsockopt", pFsetsockopt, setsockoptSlow);
+  SET_FAST_METHOD(isolate, module, "setsockopt", pFsetsockopt, setsockoptSlow);
 
   v8::CTypeInfo* cargsbind = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsbind[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -252,7 +252,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcbind = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infobind = new v8::CFunctionInfo(*rcbind, 4, cargsbind);
   v8::CFunction* pFbind = new v8::CFunction((const void*)&bindFast, infobind);
-  SET_FAST_METHOD2(isolate, module, "bind", pFbind, bindSlow);
+  SET_FAST_METHOD(isolate, module, "bind", pFbind, bindSlow);
 
   v8::CTypeInfo* cargsconnect = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsconnect[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -262,7 +262,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcconnect = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infoconnect = new v8::CFunctionInfo(*rcconnect, 4, cargsconnect);
   v8::CFunction* pFconnect = new v8::CFunction((const void*)&connectFast, infoconnect);
-  SET_FAST_METHOD2(isolate, module, "connect", pFconnect, connectSlow);
+  SET_FAST_METHOD(isolate, module, "connect", pFconnect, connectSlow);
 
   v8::CTypeInfo* cargslisten = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargslisten[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -271,7 +271,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rclisten = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infolisten = new v8::CFunctionInfo(*rclisten, 3, cargslisten);
   v8::CFunction* pFlisten = new v8::CFunction((const void*)&listenFast, infolisten);
-  SET_FAST_METHOD2(isolate, module, "listen", pFlisten, listenSlow);
+  SET_FAST_METHOD(isolate, module, "listen", pFlisten, listenSlow);
 
   v8::CTypeInfo* cargsclose = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsclose[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -279,7 +279,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcclose = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infoclose = new v8::CFunctionInfo(*rcclose, 2, cargsclose);
   v8::CFunction* pFclose = new v8::CFunction((const void*)&closeFast, infoclose);
-  SET_FAST_METHOD2(isolate, module, "close", pFclose, closeSlow);
+  SET_FAST_METHOD(isolate, module, "close", pFclose, closeSlow);
 
   v8::CTypeInfo* cargsaccept4 = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsaccept4[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -290,7 +290,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcaccept4 = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infoaccept4 = new v8::CFunctionInfo(*rcaccept4, 5, cargsaccept4);
   v8::CFunction* pFaccept4 = new v8::CFunction((const void*)&accept4Fast, infoaccept4);
-  SET_FAST_METHOD2(isolate, module, "accept4", pFaccept4, accept4Slow);
+  SET_FAST_METHOD(isolate, module, "accept4", pFaccept4, accept4Slow);
 
   v8::CTypeInfo* cargssend = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargssend[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -301,7 +301,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcsend = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infosend = new v8::CFunctionInfo(*rcsend, 5, cargssend);
   v8::CFunction* pFsend = new v8::CFunction((const void*)&sendFast, infosend);
-  SET_FAST_METHOD2(isolate, module, "send", pFsend, sendSlow);
+  SET_FAST_METHOD(isolate, module, "send", pFsend, sendSlow);
 
   v8::CTypeInfo* cargsrecv = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsrecv[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -312,7 +312,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcrecv = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* inforecv = new v8::CFunctionInfo(*rcrecv, 5, cargsrecv);
   v8::CFunction* pFrecv = new v8::CFunction((const void*)&recvFast, inforecv);
-  SET_FAST_METHOD2(isolate, module, "recv", pFrecv, recvSlow);
+  SET_FAST_METHOD(isolate, module, "recv", pFrecv, recvSlow);
 
   v8::CTypeInfo* cargsread = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsread[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -322,7 +322,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcread = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* inforead = new v8::CFunctionInfo(*rcread, 4, cargsread);
   v8::CFunction* pFread = new v8::CFunction((const void*)&readFast, inforead);
-  SET_FAST_METHOD2(isolate, module, "read", pFread, readSlow);
+  SET_FAST_METHOD(isolate, module, "read", pFread, readSlow);
 
   v8::CTypeInfo* cargspipe2 = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargspipe2[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -331,7 +331,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcpipe2 = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infopipe2 = new v8::CFunctionInfo(*rcpipe2, 3, cargspipe2);
   v8::CFunction* pFpipe2 = new v8::CFunction((const void*)&pipe2Fast, infopipe2);
-  SET_FAST_METHOD2(isolate, module, "pipe2", pFpipe2, pipe2Slow);
+  SET_FAST_METHOD(isolate, module, "pipe2", pFpipe2, pipe2Slow);
 
   v8::CTypeInfo* cargsdup2 = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsdup2[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -340,7 +340,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcdup2 = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infodup2 = new v8::CFunctionInfo(*rcdup2, 3, cargsdup2);
   v8::CFunction* pFdup2 = new v8::CFunction((const void*)&dup2Fast, infodup2);
-  SET_FAST_METHOD2(isolate, module, "dup2", pFdup2, dup2Slow);
+  SET_FAST_METHOD(isolate, module, "dup2", pFdup2, dup2Slow);
   SET_MODULE(isolate, target, "net", module);
 }
 } // namespace net

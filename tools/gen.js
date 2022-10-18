@@ -55,7 +55,7 @@ ${parameters.map((p, i) => getParameterInit(p, i, name)).join('\n')}
   v8::CTypeInfo* rc${name} = new v8::CTypeInfo(v8::CTypeInfo::Type::${getFastType(result)});
   v8::CFunctionInfo* info${name} = new v8::CFunctionInfo(*rc${name}, ${parameters.length + 1}, cargs${name});
   v8::CFunction* pF${name} = new v8::CFunction((const void*)&${name}Fast, info${name});
-  SET_FAST_METHOD2(isolate, module, "${name}", pF${name}, ${name}Slow);`
+  SET_FAST_METHOD(isolate, module, "${name}", pF${name}, ${name}Slow);`
   }
 
   function getFunction (n) {
@@ -70,16 +70,15 @@ ${parameters.map((p, i) => getSlowParameterCast(p, i, pointers)).join('\n')}
   args.GetReturnValue().Set(Integer::New(isolate, rc));
 }  
 
-${getType(result)} ${name}Fast(void* p, ${getParams(definition)}) {
+${getType(result)} ${name}Fast(void* p${parameters.length ? ', ' : ''}${getParams(definition)}) {
 ${parameters.map((p, i) => getFastParameterCast(p, i, pointers)).join('\n')}
   return ${n}(${parameters.map((p, i) => `v${i}`).join(', ')});
 }`
     return src
   }
 
-  return `extern "C" {
+  return `
 ${includes.map(include => `#include <${include}>`).join('\n')}
-}
 #include <spin.h>
 
 namespace spin {

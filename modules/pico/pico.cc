@@ -1,7 +1,6 @@
-extern "C" {
+
 #include <pico.h>
 #include <hescape.h>
-}
 #include <spin.h>
 
 namespace spin {
@@ -125,7 +124,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rczlibDeflate = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
   v8::CFunctionInfo* infozlibDeflate = new v8::CFunctionInfo(*rczlibDeflate, 5, cargszlibDeflate);
   v8::CFunction* pFzlibDeflate = new v8::CFunction((const void*)&zlibDeflateFast, infozlibDeflate);
-  SET_FAST_METHOD2(isolate, module, "zlibDeflate", pFzlibDeflate, zlibDeflateSlow);
+  SET_FAST_METHOD(isolate, module, "zlibDeflate", pFzlibDeflate, zlibDeflateSlow);
 
   v8::CTypeInfo* cargszlibInflate = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargszlibInflate[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -136,7 +135,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rczlibInflate = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
   v8::CFunctionInfo* infozlibInflate = new v8::CFunctionInfo(*rczlibInflate, 5, cargszlibInflate);
   v8::CFunction* pFzlibInflate = new v8::CFunction((const void*)&zlibInflateFast, infozlibInflate);
-  SET_FAST_METHOD2(isolate, module, "zlibInflate", pFzlibInflate, zlibInflateSlow);
+  SET_FAST_METHOD(isolate, module, "zlibInflate", pFzlibInflate, zlibInflateSlow);
 
   v8::CTypeInfo* cargsparseRequest = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsparseRequest[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -146,7 +145,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcparseRequest = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infoparseRequest = new v8::CFunctionInfo(*rcparseRequest, 4, cargsparseRequest);
   v8::CFunction* pFparseRequest = new v8::CFunction((const void*)&parseRequestFast, infoparseRequest);
-  SET_FAST_METHOD2(isolate, module, "parseRequest", pFparseRequest, parseRequestSlow);
+  SET_FAST_METHOD(isolate, module, "parseRequest", pFparseRequest, parseRequestSlow);
 
   v8::CTypeInfo* cargsparseResponse = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsparseResponse[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -156,7 +155,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcparseResponse = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infoparseResponse = new v8::CFunctionInfo(*rcparseResponse, 4, cargsparseResponse);
   v8::CFunction* pFparseResponse = new v8::CFunction((const void*)&parseResponseFast, infoparseResponse);
-  SET_FAST_METHOD2(isolate, module, "parseResponse", pFparseResponse, parseResponseSlow);
+  SET_FAST_METHOD(isolate, module, "parseResponse", pFparseResponse, parseResponseSlow);
 
   v8::CTypeInfo* cargsescapeHTML = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsescapeHTML[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -166,7 +165,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcescapeHTML = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
   v8::CFunctionInfo* infoescapeHTML = new v8::CFunctionInfo(*rcescapeHTML, 4, cargsescapeHTML);
   v8::CFunction* pFescapeHTML = new v8::CFunction((const void*)&escapeHTMLFast, infoescapeHTML);
-  SET_FAST_METHOD2(isolate, module, "escapeHTML", pFescapeHTML, escapeHTMLSlow);
+  SET_FAST_METHOD(isolate, module, "escapeHTML", pFescapeHTML, escapeHTMLSlow);
 
   v8::CTypeInfo* cargsescapeHTML16 = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargsescapeHTML16[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -176,7 +175,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* rcescapeHTML16 = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
   v8::CFunctionInfo* infoescapeHTML16 = new v8::CFunctionInfo(*rcescapeHTML16, 4, cargsescapeHTML16);
   v8::CFunction* pFescapeHTML16 = new v8::CFunction((const void*)&escapeHTML16Fast, infoescapeHTML16);
-  SET_FAST_METHOD2(isolate, module, "escapeHTML16", pFescapeHTML16, escapeHTML16Slow);
+  SET_FAST_METHOD(isolate, module, "escapeHTML16", pFescapeHTML16, escapeHTML16Slow);
   SET_MODULE(isolate, target, "pico", module);
 }
 } // namespace pico
