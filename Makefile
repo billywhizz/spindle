@@ -8,7 +8,7 @@ FLAGS=${CFLAGS}
 LFLAG=${LFLAGS}
 MODULE_DIR=modules
 SPIN_HOME=$(shell pwd)
-MODULES=modules/pico/binding.o modules/pico/pico.o modules/pico/hescape.o modules/pico/picohttpparser.o
+MODULES=modules/pico/binding.o modules/pico/pico.o modules/pico/hescape.o modules/pico/picohttpparser.o modules/net/net.o modules/loop/loop.o modules/system/system.o
 
 .PHONY: help clean
 
@@ -28,10 +28,10 @@ compile:
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter ${TARGET}.cc
 
 main: deps/v8/libv8_monolith.a ## link the main application dynamically
-	$(CC) -g -rdynamic -static-libstdc++ -flto -pthread -m64 -Wl,--start-group deps/v8/libv8_monolith.a ${TARGET}.o main.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -g -static-libstdc++ -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 main-static: deps/v8/libv8_monolith.a ## link the main application statically
-	$(CC) -g -static -flto -pthread -m64 -Wl,--start-group deps/v8/libv8_monolith.a main.o ${TARGET}.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -g -static -flto -pthread -m64 -Wl,--start-group deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} main.o -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 debug: ## strip debug symbols into a separate file
 	objcopy --only-keep-debug ${TARGET} ${TARGET}.debug
@@ -47,6 +47,8 @@ all:
 clean: ## tidy up
 	rm -f *.o
 	rm -f *.gz
+	rm -f spin
+	rm -f *.debug
 
 cleanall: ## remove target and build deps
 	rm -fr deps

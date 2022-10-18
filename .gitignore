@@ -3,3 +3,4 @@ deps
 spin
 *.debug
 *.so
+scratch

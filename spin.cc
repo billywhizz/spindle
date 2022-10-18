@@ -598,7 +598,7 @@ void spin::DLClose(const FunctionCallbackInfo<Value> &args) {
 }
 
 void spin::GetAddress(const FunctionCallbackInfo<Value> &args) {
-  args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), (uint64_t)args[0].As<ArrayBuffer>()->Data()));
+  args.GetReturnValue().Set(Number::New(args.GetIsolate(), (uint64_t)args[0].As<ArrayBuffer>()->Data()));
 }
 
 void spin::Calloc(const FunctionCallbackInfo<Value> &args) {
