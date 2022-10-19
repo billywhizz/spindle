@@ -14,10 +14,10 @@ void zlibDeflateSlow(const FunctionCallbackInfo<Value> &args) {
   uint8_t* v2 = reinterpret_cast<uint8_t*>((uint64_t)args[2]->NumberValue(context).ToChecked());
   uint32_t v3 = Local<Integer>::Cast(args[3])->Value();
   uint32_t rc = zlib_deflate(v0, v1, v2, v3);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-uint32_t zlibDeflateFast(void* p, uint64_t p0, uint32_t p1, uint64_t p2, uint32_t p3) {
+uint32_t zlibDeflateFast(void* p, void* p0, uint32_t p1, void* p2, uint32_t p3) {
   uint8_t* v0 = reinterpret_cast<uint8_t*>(p0);
   uint32_t v1 = p1;
   uint8_t* v2 = reinterpret_cast<uint8_t*>(p2);
@@ -33,10 +33,10 @@ void zlibInflateSlow(const FunctionCallbackInfo<Value> &args) {
   uint8_t* v2 = reinterpret_cast<uint8_t*>((uint64_t)args[2]->NumberValue(context).ToChecked());
   uint32_t v3 = Local<Integer>::Cast(args[3])->Value();
   uint32_t rc = zlib_inflate(v0, v1, v2, v3);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-uint32_t zlibInflateFast(void* p, uint64_t p0, uint32_t p1, uint64_t p2, uint32_t p3) {
+uint32_t zlibInflateFast(void* p, void* p0, uint32_t p1, void* p2, uint32_t p3) {
   uint8_t* v0 = reinterpret_cast<uint8_t*>(p0);
   uint32_t v1 = p1;
   uint8_t* v2 = reinterpret_cast<uint8_t*>(p2);
@@ -51,10 +51,10 @@ void parseRequestSlow(const FunctionCallbackInfo<Value> &args) {
   uint32_t v1 = Local<Integer>::Cast(args[1])->Value();
   httpRequest* v2 = reinterpret_cast<httpRequest*>((uint64_t)args[2]->NumberValue(context).ToChecked());
   int32_t rc = parse_request(v0, v1, v2);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-int32_t parseRequestFast(void* p, uint64_t p0, uint32_t p1, uint64_t p2) {
+int32_t parseRequestFast(void* p, void* p0, uint32_t p1, void* p2) {
   char* v0 = reinterpret_cast<char*>(p0);
   uint32_t v1 = p1;
   httpRequest* v2 = reinterpret_cast<httpRequest*>(p2);
@@ -68,10 +68,10 @@ void parseResponseSlow(const FunctionCallbackInfo<Value> &args) {
   uint32_t v1 = Local<Integer>::Cast(args[1])->Value();
   httpResponse* v2 = reinterpret_cast<httpResponse*>((uint64_t)args[2]->NumberValue(context).ToChecked());
   int32_t rc = parse_response(v0, v1, v2);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-int32_t parseResponseFast(void* p, uint64_t p0, uint32_t p1, uint64_t p2) {
+int32_t parseResponseFast(void* p, void* p0, uint32_t p1, void* p2) {
   char* v0 = reinterpret_cast<char*>(p0);
   uint32_t v1 = p1;
   httpResponse* v2 = reinterpret_cast<httpResponse*>(p2);
@@ -85,10 +85,10 @@ void escapeHTMLSlow(const FunctionCallbackInfo<Value> &args) {
   const uint8_t* v1 = reinterpret_cast<const uint8_t*>((uint64_t)args[1]->NumberValue(context).ToChecked());
   uint32_t v2 = Local<Integer>::Cast(args[2])->Value();
   uint32_t rc = hesc_escape_html(v0, v1, v2);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-uint32_t escapeHTMLFast(void* p, uint64_t p0, uint64_t p1, uint32_t p2) {
+uint32_t escapeHTMLFast(void* p, void* p0, void* p1, uint32_t p2) {
   uint8_t* v0 = reinterpret_cast<uint8_t*>(p0);
   const uint8_t* v1 = reinterpret_cast<const uint8_t*>(p1);
   uint32_t v2 = p2;
@@ -102,10 +102,10 @@ void escapeHTML16Slow(const FunctionCallbackInfo<Value> &args) {
   const uint8_t* v1 = reinterpret_cast<const uint8_t*>((uint64_t)args[1]->NumberValue(context).ToChecked());
   uint32_t v2 = Local<Integer>::Cast(args[2])->Value();
   uint32_t rc = hesc_escape_html16(v0, v1, v2);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-uint32_t escapeHTML16Fast(void* p, uint64_t p0, uint64_t p1, uint32_t p2) {
+uint32_t escapeHTML16Fast(void* p, void* p0, void* p1, uint32_t p2) {
   uint8_t* v0 = reinterpret_cast<uint8_t*>(p0);
   const uint8_t* v1 = reinterpret_cast<const uint8_t*>(p1);
   uint32_t v2 = p2;

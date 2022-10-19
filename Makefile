@@ -23,6 +23,12 @@ deps/v8/libv8_monolith.a: ## download v8 monolithic library for linking
 builtins.o: ## compile builtins with build dependencies
 	gcc builtins.S -c -o builtins.o
 
+pre:
+	./spin tools/idl.js modules/system/system.js > modules/system/system.cc
+	./spin tools/idl.js modules/pico/pico.js > modules/pico/pico.cc
+	./spin tools/idl.js modules/net/net.js > modules/net/net.cc
+	./spin tools/idl.js modules/loop/loop.js > modules/loop/loop.cc
+
 compile:
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter main.cc
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter ${TARGET}.cc
@@ -42,7 +48,12 @@ module: ## build a shared library for a module
 	CFLAGS="$(FLAGS)" LFLAGS="${LFLAG}" SPIN_HOME="$(SPIN_HOME)" $(MAKE) -C ${MODULE_DIR}/${MODULE}/ library
 
 all:
-	$(MAKE) clean builtins.o compile main debug
+	$(MAKE) pre
+	$(MAKE) MODULE=net module
+	$(MAKE) MODULE=system module
+	$(MAKE) MODULE=loop module
+	$(MAKE) MODULE=pico module
+	$(MAKE) builtins.o compile main debug
 
 clean: ## tidy up
 	rm -f *.o

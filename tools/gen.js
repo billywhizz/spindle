@@ -1,8 +1,19 @@
-function getType (id = '') {
-  if (id === 'u32') return 'uint32_t'
-  if (id === 'i32') return 'int32_t'
-  if (id === 'pointer') return 'uint64_t'
-  return 'void'
+function getType (t, rv = false) {
+  if (t === 'i8') return 'int8_t'
+  if (t === 'i16') return 'int16_t'
+  if (t === 'i32') return 'int32_t'
+  if (t === 'u8') return 'uint8_t'
+  if (t === 'u16') return 'uint16_t'
+  if (t === 'u32') return 'uint32_t'
+  if (t === 'void') return 'void'
+  if (t === 'f32') return 'float'
+  if (t === 'f64') return 'double'
+  if (t === 'i64') return 'int64_t'
+  if (t === 'u64') return 'uint64_t'
+  if (t === 'isz') return 'intptr_t'
+  if (t === 'usz') return 'uintptr_t'
+  if (rv) return 'void'
+  return 'void*'
 }
 
 function getFastType (id = '') {
@@ -12,9 +23,19 @@ function getFastType (id = '') {
   return 'void'
 }
 
+function needsUnwrap (t) {
+  if (t === 'u32') return false
+  if (t === 'i32') return false
+  return true
+}
+
 function getParams (def) {
   const pointers = def.pointers.slice(0)
-  return def.parameters.map((p, i) => `${getType(p, pointers)} p${i}`).join(', ')
+  let params = def.parameters.map((p, i) => `${getType(p)} p${i}`)
+  if (needsUnwrap(def.result)) {
+    params.push('struct FastApiTypedArray* const p_ret')
+  }
+  return params.join(', ')
 }
 
 function getFastParameterCast (parameter, index, pointers) {
@@ -61,19 +82,33 @@ ${parameters.map((p, i) => getParameterInit(p, i, name)).join('\n')}
   function getFunction (n) {
     const definition = api[n]
     const { parameters, pointers, result, name } = definition
-    const src = `
+    let src = `
 void ${name}Slow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-${parameters.map((p, i) => getSlowParameterCast(p, i, pointers)).join('\n')}
+  Isolate *isolate = args.GetIsolate();`
+    if (parameters.length) {
+      src += `\n  Local<Context> context = isolate->GetCurrentContext();\n`
+    }
+    src += `${parameters.map((p, i) => getSlowParameterCast(p, i, pointers)).join('\n')}
   ${getType(result)} rc = ${n}(${parameters.map((p, i) => `v${i}`).join(', ')});
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+`
+    if (needsUnwrap(result)) {
+      if (result === 'pointer') {
+        src += `  args.GetReturnValue().Set(Number::New(isolate, reinterpret_cast<uint64_t>(rc)));\n`
+      }
+    } else {
+      src += `  args.GetReturnValue().Set(Number::New(isolate, rc));\n`
+    }
+    src += `}
 
-${getType(result)} ${name}Fast(void* p${parameters.length ? ', ' : ''}${getParams(definition)}) {
-${parameters.map((p, i) => getFastParameterCast(p, i, pointers)).join('\n')}
-  return ${n}(${parameters.map((p, i) => `v${i}`).join(', ')});
-}`
+${getType(result, true)} ${name}Fast(void* p${parameters.length ? ', ' : ''}${getParams(definition)}) {
+${parameters.map((p, i) => getFastParameterCast(p, i, pointers)).join('\n')}`
+    if (needsUnwrap(result)) {
+      src += `\n  ${getType(result)} r = ${n}(${parameters.map((p, i) => `v${i}`).join(', ')});`
+      src += `  ((${getType(result)}*)p_ret->data)[0] = r;\n`
+    } else {
+      src += `\n  return ${n}(${parameters.map((p, i) => `v${i}`).join(', ')});`
+    }
+    src += '\n}'
     return src
   }
 

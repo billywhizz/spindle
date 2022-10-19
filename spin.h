@@ -56,6 +56,11 @@ using v8::Number;
 using v8::MaybeLocal;
 using v8::PrimitiveArray;
 
+struct FastApiTypedArray {
+  uintptr_t length_;
+  void* data;
+};
+
 struct rawBuffer {
   uint32_t len;
   int32_t read;
@@ -128,6 +133,28 @@ void SET_FAST_METHOD(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, co
   exports->Set(
     v8::String::NewFromUtf8(isolate, name).ToLocalChecked(),
     funcTemplate
+  );
+}
+
+template <typename F>
+void SET_FAST_PROP(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, const char * name, F* fastCFunc, v8::FunctionCallback slowFunc) {
+  v8::Local<v8::FunctionTemplate> funcTemplate = v8::FunctionTemplate::New(
+    isolate,
+    slowFunc,
+    v8::Local<v8::Value>(),
+    v8::Local<v8::Signature>(),
+    0,
+    v8::ConstructorBehavior::kThrow,
+    v8::SideEffectType::kHasSideEffect,
+    fastCFunc
+  );
+  enum v8::PropertyAttribute attributes =
+      static_cast<v8::PropertyAttribute>(v8::PropertyAttribute::ReadOnly | v8::PropertyAttribute::DontDelete);
+  exports->SetAccessorProperty(
+    v8::String::NewFromUtf8(isolate, name).ToLocalChecked(),
+    funcTemplate,
+    Local<FunctionTemplate>(),
+    attributes
   );
 }
 

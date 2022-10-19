@@ -11,8 +11,8 @@ void createSlow(const FunctionCallbackInfo<Value> &args) {
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t rc = epoll_create1(v0);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
 int32_t createFast(void* p, int32_t p0) {
   int32_t v0 = p0;
@@ -27,10 +27,10 @@ void modifySlow(const FunctionCallbackInfo<Value> &args) {
   int32_t v2 = Local<Integer>::Cast(args[2])->Value();
   struct epoll_event * v3 = reinterpret_cast<struct epoll_event *>((uint64_t)args[3]->NumberValue(context).ToChecked());
   int32_t rc = epoll_ctl(v0, v1, v2, v3);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-int32_t modifyFast(void* p, int32_t p0, int32_t p1, int32_t p2, uint64_t p3) {
+int32_t modifyFast(void* p, int32_t p0, int32_t p1, int32_t p2, void* p3) {
   int32_t v0 = p0;
   int32_t v1 = p1;
   int32_t v2 = p2;
@@ -46,10 +46,10 @@ void waitSlow(const FunctionCallbackInfo<Value> &args) {
   int32_t v2 = Local<Integer>::Cast(args[2])->Value();
   int32_t v3 = Local<Integer>::Cast(args[3])->Value();
   int32_t rc = epoll_wait(v0, v1, v2, v3);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-int32_t waitFast(void* p, int32_t p0, uint64_t p1, int32_t p2, int32_t p3) {
+int32_t waitFast(void* p, int32_t p0, void* p1, int32_t p2, int32_t p3) {
   int32_t v0 = p0;
   struct epoll_event * v1 = reinterpret_cast<struct epoll_event *>(p1);
   int32_t v2 = p2;
@@ -62,8 +62,8 @@ void closeSlow(const FunctionCallbackInfo<Value> &args) {
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t rc = close(v0);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
 int32_t closeFast(void* p, int32_t p0) {
   int32_t v0 = p0;

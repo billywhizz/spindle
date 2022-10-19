@@ -1,6 +1,7 @@
 
 #include <sys/resource.h>
 #include <unistd.h>
+#include <dlfcn.h>
 #include <spin.h>
 
 namespace spin {
@@ -12,10 +13,10 @@ void clock_gettimeSlow(const FunctionCallbackInfo<Value> &args) {
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   timespec* v1 = reinterpret_cast<timespec*>((uint64_t)args[1]->NumberValue(context).ToChecked());
   int32_t rc = clock_gettime(v0, v1);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-int32_t clock_gettimeFast(void* p, int32_t p0, uint64_t p1) {
+int32_t clock_gettimeFast(void* p, int32_t p0, void* p1) {
   int32_t v0 = p0;
   timespec* v1 = reinterpret_cast<timespec*>(p1);
   return clock_gettime(v0, v1);
@@ -23,11 +24,9 @@ int32_t clock_gettimeFast(void* p, int32_t p0, uint64_t p1) {
 
 void getpidSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-
   int32_t rc = getpid();
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
 int32_t getpidFast(void* p) {
 
@@ -40,13 +39,58 @@ void getrusageSlow(const FunctionCallbackInfo<Value> &args) {
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   struct rusage* v1 = reinterpret_cast<struct rusage*>((uint64_t)args[1]->NumberValue(context).ToChecked());
   int32_t rc = getrusage(v0, v1);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
-}  
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
 
-int32_t getrusageFast(void* p, int32_t p0, uint64_t p1) {
+int32_t getrusageFast(void* p, int32_t p0, void* p1) {
   int32_t v0 = p0;
   struct rusage* v1 = reinterpret_cast<struct rusage*>(p1);
   return getrusage(v0, v1);
+}
+
+void dlopenSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  const char* v0 = reinterpret_cast<const char*>((uint64_t)args[0]->NumberValue(context).ToChecked());
+  int32_t v1 = Local<Integer>::Cast(args[1])->Value();
+  void* rc = dlopen(v0, v1);
+  args.GetReturnValue().Set(Number::New(isolate, reinterpret_cast<uint64_t>(rc)));
+}
+
+void dlopenFast(void* p, void* p0, int32_t p1, struct FastApiTypedArray* const p_ret) {
+  const char* v0 = reinterpret_cast<const char*>(p0);
+  int32_t v1 = p1;
+  void* r = dlopen(v0, v1);  ((void**)p_ret->data)[0] = r;
+
+}
+
+void dlsymSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  void* v0 = reinterpret_cast<void*>((uint64_t)args[0]->NumberValue(context).ToChecked());
+  const char* v1 = reinterpret_cast<const char*>((uint64_t)args[1]->NumberValue(context).ToChecked());
+  void* rc = dlsym(v0, v1);
+  args.GetReturnValue().Set(Number::New(isolate, reinterpret_cast<uint64_t>(rc)));
+}
+
+void dlsymFast(void* p, void* p0, void* p1, struct FastApiTypedArray* const p_ret) {
+  void* v0 = reinterpret_cast<void*>(p0);
+  const char* v1 = reinterpret_cast<const char*>(p1);
+  void* r = dlsym(v0, v1);  ((void**)p_ret->data)[0] = r;
+
+}
+
+void dlcloseSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  void* v0 = reinterpret_cast<void*>((uint64_t)args[0]->NumberValue(context).ToChecked());
+  int32_t rc = dlclose(v0);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t dlcloseFast(void* p, void* p0) {
+  void* v0 = reinterpret_cast<void*>(p0);
+  return dlclose(v0);
 }
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target) {
@@ -77,6 +121,32 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunctionInfo* infogetrusage = new v8::CFunctionInfo(*rcgetrusage, 3, cargsgetrusage);
   v8::CFunction* pFgetrusage = new v8::CFunction((const void*)&getrusageFast, infogetrusage);
   SET_FAST_METHOD(isolate, module, "getrusage", pFgetrusage, getrusageSlow);
+
+  v8::CTypeInfo* cargsdlopen = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  cargsdlopen[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargsdlopen[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  cargsdlopen[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CTypeInfo* rcdlopen = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CFunctionInfo* infodlopen = new v8::CFunctionInfo(*rcdlopen, 3, cargsdlopen);
+  v8::CFunction* pFdlopen = new v8::CFunction((const void*)&dlopenFast, infodlopen);
+  SET_FAST_METHOD(isolate, module, "dlopen", pFdlopen, dlopenSlow);
+
+  v8::CTypeInfo* cargsdlsym = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  cargsdlsym[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargsdlsym[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  cargsdlsym[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CTypeInfo* rcdlsym = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CFunctionInfo* infodlsym = new v8::CFunctionInfo(*rcdlsym, 3, cargsdlsym);
+  v8::CFunction* pFdlsym = new v8::CFunction((const void*)&dlsymFast, infodlsym);
+  SET_FAST_METHOD(isolate, module, "dlsym", pFdlsym, dlsymSlow);
+
+  v8::CTypeInfo* cargsdlclose = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  cargsdlclose[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargsdlclose[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CTypeInfo* rcdlclose = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infodlclose = new v8::CFunctionInfo(*rcdlclose, 2, cargsdlclose);
+  v8::CFunction* pFdlclose = new v8::CFunction((const void*)&dlcloseFast, infodlclose);
+  SET_FAST_METHOD(isolate, module, "dlclose", pFdlclose, dlcloseSlow);
   SET_MODULE(isolate, target, "system", module);
 }
 } // namespace system
