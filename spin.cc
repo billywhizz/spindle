@@ -150,6 +150,29 @@ char* readFile(char filename[]) {
   return contents;
 }
 
+char* readFile2(char filename[]) {
+  spin::builtin* b = spin::builtins[filename];
+  if (b != nullptr) {
+    char* contents = (char*)calloc(1, b->size);
+    memcpy(contents, b->source, b->size);
+    return contents;
+  }
+  char* contents;
+  std::ifstream file;
+  file.open(filename, std::ifstream::ate);
+  if (!file) {
+    contents = new char[1];
+    return contents;
+  }
+  size_t file_size = file.tellg();
+  file.seekg(0);
+  std::filebuf* file_buf = file.rdbuf();
+  contents = new char[file_size + 1]();
+  file_buf->sgetn(contents, file_size);
+  file.close();
+  return contents;
+}
+
 v8::MaybeLocal<v8::Module> loadModule(char code[],
                                       char name[],
                                       v8::Local<v8::Context> cx) {
@@ -685,6 +708,12 @@ void spin::ReadUtf16(const FunctionCallbackInfo<Value> &args) {
     NewStringType::kNormal, buf->written).ToLocalChecked());
 }
 
+void spin::HRTime(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  uint64_t rc = spin::hrtime();
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
 void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> version = ObjectTemplate::New(isolate);
   SET_VALUE(isolate, version, GLOBALOBJ, String::NewFromUtf8Literal(isolate, 
@@ -692,6 +721,12 @@ void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, version, "v8", String::NewFromUtf8(isolate, 
     v8::V8::GetVersion()).ToLocalChecked());
   SET_MODULE(isolate, target, "version", version);
+  v8::CTypeInfo* cargshrtime = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  cargshrtime[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  v8::CTypeInfo* rcgetpid = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infohrtime = new v8::CFunctionInfo(*rcgetpid, 1, cargshrtime);
+  v8::CFunction* pFhrtime = new v8::CFunction((const void*)&spin::hrtime, infohrtime);
+  SET_FAST_METHOD(isolate, target, "hrtime", pFhrtime, HRTime);
   SET_METHOD(isolate, target, "runMicroTasks", RunMicroTasks);
   SET_METHOD(isolate, target, "nextTick", NextTick);
   SET_METHOD(isolate, target, "compile", Compile);

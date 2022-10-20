@@ -182,6 +182,23 @@ int32_t readFast(void* p, int32_t p0, void* p1, int32_t p2) {
   return read(v0, v1, v2);
 }
 
+void writeSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  void* v1 = reinterpret_cast<void*>((uint64_t)args[1]->NumberValue(context).ToChecked());
+  int32_t v2 = Local<Integer>::Cast(args[2])->Value();
+  int32_t rc = write(v0, v1, v2);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t writeFast(void* p, int32_t p0, void* p1, int32_t p2) {
+  int32_t v0 = p0;
+  void* v1 = reinterpret_cast<void*>(p1);
+  int32_t v2 = p2;
+  return write(v0, v1, v2);
+}
+
 void pipe2Slow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
@@ -314,6 +331,16 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunctionInfo* inforead = new v8::CFunctionInfo(*rcread, 4, cargsread);
   v8::CFunction* pFread = new v8::CFunction((const void*)&readFast, inforead);
   SET_FAST_METHOD(isolate, module, "read", pFread, readSlow);
+
+  v8::CTypeInfo* cargswrite = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  cargswrite[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargswrite[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargswrite[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  cargswrite[3] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CTypeInfo* rcwrite = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infowrite = new v8::CFunctionInfo(*rcwrite, 4, cargswrite);
+  v8::CFunction* pFwrite = new v8::CFunction((const void*)&writeFast, infowrite);
+  SET_FAST_METHOD(isolate, module, "write", pFwrite, writeSlow);
 
   v8::CTypeInfo* cargspipe2 = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
   cargspipe2[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);

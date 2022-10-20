@@ -1,3 +1,4 @@
+const boot = spin.hrtime() - Number(spin.start)
 const AD = '\u001b[0m' // ANSI Default
 const A0 = '\u001b[30m' // ANSI Black
 const AR = '\u001b[31m' // ANSI Red
@@ -93,5 +94,7 @@ if (spin.args.length > 1) {
     await main(...spin.args.slice(1))
   }
 } else {
-  console.log(JSON.stringify(spin.version))
+  const versions = spin.version
+  const ready = spin.hrtime() - Number(spin.start) - boot
+  console.log(`spin ${versions.spin} v8 ${versions.v8} boot ${boot} ready ${ready}`)
 }

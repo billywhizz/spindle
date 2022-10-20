@@ -163,6 +163,8 @@ void Builtin(const FunctionCallbackInfo<Value> &args);
 void Builtins(const FunctionCallbackInfo<Value> &args);
 void Modules(const FunctionCallbackInfo<Value> &args);
 
+void HRTime(const FunctionCallbackInfo<Value> &args);
+
 void NextTick(const FunctionCallbackInfo<Value> &args);
 void RunMicroTasks(const FunctionCallbackInfo<Value> &args);
 void Compile(const FunctionCallbackInfo<Value> &args);

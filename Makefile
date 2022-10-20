@@ -8,7 +8,7 @@ FLAGS=${CFLAGS}
 LFLAG=${LFLAGS}
 MODULE_DIR=modules
 SPIN_HOME=$(shell pwd)
-MODULES=modules/system/system.a modules/loop/loop.a modules/net/net.a modules/pico/pico.a deps/zlib-ng-2.0.6/libz.a
+MODULES=modules/system/system.a modules/loop/loop.a modules/net/net.a modules/pico/pico.a
 LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js
 
 .PHONY: help clean
@@ -43,11 +43,11 @@ compile: ## compile the runtime
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter ${TARGET}.cc
 
 main: deps/v8/libv8_monolith.a ## link the runtime dynamically
-	$(CC) -g -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
-#	$(CC) -g -static-libstdc++ -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+#	$(CC) -g -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -g -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 main-static: deps/v8/libv8_monolith.a ## link the runtime statically
-	$(CC) -g -static -flto -pthread -m64 -Wl,--start-group deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} main.o -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -g -static -flto -pthread -m64 -Wl,--start-group deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} main.o -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 debug: ## strip debug symbols into a separate file
 	objcopy --only-keep-debug ${TARGET} ${TARGET}.debug
