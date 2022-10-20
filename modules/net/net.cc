@@ -133,16 +133,16 @@ void sendSlow(const FunctionCallbackInfo<Value> &args) {
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   void* v1 = reinterpret_cast<void*>((uint64_t)args[1]->NumberValue(context).ToChecked());
   int32_t v2 = Local<Integer>::Cast(args[2])->Value();
-  int32_t v3 = Local<Integer>::Cast(args[3])->Value();
+  uint32_t v3 = Local<Integer>::Cast(args[3])->Value();
   int32_t rc = send(v0, v1, v2, v3);
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }
 
-int32_t sendFast(void* p, int32_t p0, void* p1, int32_t p2, int32_t p3) {
+int32_t sendFast(void* p, int32_t p0, void* p1, int32_t p2, uint32_t p3) {
   int32_t v0 = p0;
   void* v1 = reinterpret_cast<void*>(p1);
   int32_t v2 = p2;
-  int32_t v3 = p3;
+  uint32_t v3 = p3;
   return send(v0, v1, v2, v3);
 }
 
@@ -151,16 +151,16 @@ void recvSlow(const FunctionCallbackInfo<Value> &args) {
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   void* v1 = reinterpret_cast<void*>((uint64_t)args[1]->NumberValue(context).ToChecked());
-  int32_t v2 = Local<Integer>::Cast(args[2])->Value();
+  uint32_t v2 = Local<Integer>::Cast(args[2])->Value();
   int32_t v3 = Local<Integer>::Cast(args[3])->Value();
   int32_t rc = recv(v0, v1, v2, v3);
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }
 
-int32_t recvFast(void* p, int32_t p0, void* p1, int32_t p2, int32_t p3) {
+int32_t recvFast(void* p, int32_t p0, void* p1, uint32_t p2, int32_t p3) {
   int32_t v0 = p0;
   void* v1 = reinterpret_cast<void*>(p1);
-  int32_t v2 = p2;
+  uint32_t v2 = p2;
   int32_t v3 = p3;
   return recv(v0, v1, v2, v3);
 }
@@ -288,7 +288,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   cargssend[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   cargssend[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   cargssend[3] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
-  cargssend[4] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargssend[4] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
   v8::CTypeInfo* rcsend = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infosend = new v8::CFunctionInfo(*rcsend, 5, cargssend);
   v8::CFunction* pFsend = new v8::CFunction((const void*)&sendFast, infosend);
@@ -298,7 +298,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   cargsrecv[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsrecv[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   cargsrecv[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
-  cargsrecv[3] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargsrecv[3] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
   cargsrecv[4] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CTypeInfo* rcrecv = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* inforecv = new v8::CFunctionInfo(*rcrecv, 5, cargsrecv);

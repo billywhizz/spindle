@@ -31,11 +31,11 @@ const api = {
     result: 'i32'
   },
   send: {
-    parameters: ['i32', 'pointer', 'i32', 'i32'],
+    parameters: ['i32', 'pointer', 'i32', 'u32'],
     result: 'i32'
   },
   recv: {
-    parameters: ['i32', 'pointer', 'i32', 'i32'],
+    parameters: ['i32', 'pointer', 'u32', 'i32'],
     result: 'i32'
   },
   read: {

@@ -28,8 +28,7 @@ global.onUnhandledRejection = err => {
   // todo: exit? maybe with a flag
 }
 
-if (spin.args.length >= 2) {
-  // todo: catch this in c++
+async function main () {
   try {
     const { main, serve } = await import(spin.args[1])
     if (main) {
@@ -40,6 +39,26 @@ if (spin.args.length >= 2) {
     }
   } catch (err) {
     //console.error(err.stack)
+  }
+}
+
+if (spin.args.length > 1) {
+  if (spin.args[1] === 'gen') {
+    const { bindings, linkerScript, headerFile } = await import('lib/gen.js')
+    let source = ''
+    if (spin.args[2] === '--link') {
+      source += await linkerScript('main.js')
+      for (const fileName of spin.args.slice(3)) {
+        source += await linkerScript(fileName)
+      }
+    } else if (spin.args[2] === '--header') {
+      source = await headerFile(spin.args.slice(3))
+    } else {
+      source = await bindings(spin.args[2])
+    }
+    console.log(source)  
+  } else {
+    await main(...spin.args.slice(1))
   }
 } else {
   console.log(JSON.stringify(spin.version))

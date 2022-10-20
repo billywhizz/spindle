@@ -15,6 +15,8 @@ extern char _binary_lib_net_js_start[];
 extern char _binary_lib_net_js_end[];
 extern char _binary_lib_pico_js_start[];
 extern char _binary_lib_pico_js_end[];
+extern char _binary_lib_gen_js_start[];
+extern char _binary_lib_gen_js_end[];
 
 extern "C" {
   extern void* _register_system();
@@ -29,6 +31,7 @@ void register_builtins() {
   spin::builtins_add("loop.js", _binary_lib_loop_js_start, _binary_lib_loop_js_end - _binary_lib_loop_js_start);
   spin::builtins_add("net.js", _binary_lib_net_js_start, _binary_lib_net_js_end - _binary_lib_net_js_start);
   spin::builtins_add("pico.js", _binary_lib_pico_js_start, _binary_lib_pico_js_end - _binary_lib_pico_js_start);
+  spin::builtins_add("gen.js", _binary_lib_gen_js_start, _binary_lib_gen_js_end - _binary_lib_gen_js_start);
   spin::modules["system"] = &_register_system;
   spin::modules["loop"] = &_register_loop;
   spin::modules["net"] = &_register_net;

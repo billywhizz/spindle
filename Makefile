@@ -9,7 +9,7 @@ LFLAG=${LFLAGS}
 MODULE_DIR=modules
 SPIN_HOME=$(shell pwd)
 MODULES=modules/system/system.a modules/loop/loop.a modules/net/net.a modules/pico/pico.a
-LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js
+LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js
 
 .PHONY: help clean
 
@@ -25,12 +25,12 @@ builtins.o: ## compile builtins with build dependencies
 	gcc builtins.S -c -o builtins.o
 
 gen: ## generate source from definitions
-	./spin tools/idl.js --link ${LIBS} > builtins.S
-	./spin tools/idl.js --header ${LIBS} ${MODULES} > main.h
-	./spin tools/idl.js modules/system/system.js > modules/system/system.cc
-	./spin tools/idl.js modules/pico/pico.js > modules/pico/pico.cc
-	./spin tools/idl.js modules/net/net.js > modules/net/net.cc
-	./spin tools/idl.js modules/loop/loop.js > modules/loop/loop.cc
+	./spin gen --link ${LIBS} > builtins.S
+	./spin gen --header ${LIBS} ${MODULES} > main.h
+	./spin gen modules/system/system.js > modules/system/system.cc
+	./spin gen modules/pico/pico.js > modules/pico/pico.cc
+	./spin gen modules/net/net.js > modules/net/net.cc
+	./spin gen modules/loop/loop.js > modules/loop/loop.cc
 
 compile: ## compile the runtime
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter main.cc

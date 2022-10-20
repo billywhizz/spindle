@@ -343,6 +343,7 @@ int spin::CreateIsolate(int argc, char** argv,
       try_catch.ReThrow();
       return 1;
     }
+/*
     Local<Value> func = globalInstance->Get(context, 
       String::NewFromUtf8Literal(isolate, "onExit", 
         NewStringType::kNormal)).ToLocalChecked();
@@ -359,10 +360,11 @@ int spin::CreateIsolate(int argc, char** argv,
       }
       statusCode = result.ToLocalChecked()->Uint32Value(context).ToChecked();
     }
+*/
   }
-  cleanupIsolate(isolate);
-  delete create_params.array_buffer_allocator;
-  isolate = nullptr;
+  //cleanupIsolate(isolate);
+  //delete create_params.array_buffer_allocator;
+  //isolate = nullptr;
   return statusCode;
 }
 
