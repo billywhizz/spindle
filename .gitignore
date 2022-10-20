@@ -4,3 +4,5 @@ spin
 *.debug
 *.so
 scratch
+.vscode
+*.a

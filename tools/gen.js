@@ -58,7 +58,7 @@ function getParameterInit(p, i, name) {
   return `  cargs${name}[${i + 1}] = v8::CTypeInfo(v8::CTypeInfo::Type::${getFastType(p)});`
 }
 
-async function generate (importPath) {
+async function bindings (importPath) {
   const { api, includes, name } = await import(importPath)
   const fNames = Object.keys(api)
   for (const name of fNames) {
@@ -85,7 +85,7 @@ ${parameters.map((p, i) => getParameterInit(p, i, name)).join('\n')}
     let src = `
 void ${name}Slow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();`
-    if (parameters.length) {
+    if (parameters.includes('pointer')) {
       src += `\n  Local<Context> context = isolate->GetCurrentContext();\n`
     }
     src += `${parameters.map((p, i) => getSlowParameterCast(p, i, pointers)).join('\n')}
@@ -103,7 +103,7 @@ void ${name}Slow(const FunctionCallbackInfo<Value> &args) {
 ${getType(result, true)} ${name}Fast(void* p${parameters.length ? ', ' : ''}${getParams(definition)}) {
 ${parameters.map((p, i) => getFastParameterCast(p, i, pointers)).join('\n')}`
     if (needsUnwrap(result)) {
-      src += `\n  ${getType(result)} r = ${n}(${parameters.map((p, i) => `v${i}`).join(', ')});`
+      src += `\n  ${getType(result)} r = ${n}(${parameters.map((p, i) => `v${i}`).join(', ')});\n`
       src += `  ((${getType(result)}*)p_ret->data)[0] = r;\n`
     } else {
       src += `\n  return ${n}(${parameters.map((p, i) => `v${i}`).join(', ')});`
@@ -112,8 +112,7 @@ ${parameters.map((p, i) => getFastParameterCast(p, i, pointers)).join('\n')}`
     return src
   }
 
-  return `
-${includes.map(include => `#include <${include}>`).join('\n')}
+  return `${includes.map(include => `#include <${include}>`).join('\n')}
 #include <spin.h>
 
 namespace spin {
@@ -132,10 +131,80 @@ extern "C" {
   void* _register_${name}() {
     return (void*)spin::${name}::Init;
   }
+}`
 }
 
+const rx = /[./-]/g
+
+function linkerScript (fileName) {
+  const name = `_binary_${fileName.replace(rx, '_')}`
+  return `.global ${name}_start
+${name}_start:
+        .incbin "${fileName}"
+        .global ${name}_end
+${name}_end:
 `
 }
 
+function baseName (path) {
+  return path.slice(path.lastIndexOf('/') + 1, path.lastIndexOf('.'))
+}
 
-export { generate }
+function fileName (path) {
+  return path.slice(path.lastIndexOf('/') + 1)
+}
+
+function extName (path) {
+  const pos = path.lastIndexOf('.')
+  if (pos < 0) return ''
+  return path.slice(pos + 1)
+}
+
+function headerFile (deps = [], v8flags = '--stack-trace-limit=10 --use-strict --turbo-fast-api-calls --single-threaded --nolazy') {
+  const libs = deps.filter(dep => extName(dep) !== 'a')
+  const modules = deps.filter(dep => extName(dep) === 'a')
+  let source = `#pragma once
+
+#include "spin.h"
+
+using v8::V8;
+using v8::Platform;
+
+extern char _binary_main_js_start[];
+extern char _binary_main_js_end[];
+`
+  for (const lib of libs) {
+    const name = `_binary_${lib.replace(rx, '_')}`
+    source += `extern char ${name}_start[];\n`
+    source += `extern char ${name}_end[];\n`
+  }
+  if (modules.length) {
+    source += '\nextern "C" {\n'
+  }
+  for (const module of modules) {
+    source += `  extern void* _register_${baseName(module)}();\n`;
+  }
+  if (modules.length) source += '}\n'
+  source += `
+void register_builtins() {
+  spin::builtins_add("main.js", _binary_main_js_start, _binary_main_js_end - _binary_main_js_start);
+`
+  for (const lib of libs) {
+    const name = `_binary_${lib.replace(rx, '_')}`
+    source += `  spin::builtins_add("${fileName(lib)}", ${name}_start, ${name}_end - ${name}_start);\n`
+  }
+  for (const module of modules) {
+    const name = baseName(module)
+    source += `  spin::modules["${name}"] = &_register_${name};\n`;
+  }
+  source += `}
+
+static unsigned int main_js_len = _binary_main_js_end - _binary_main_js_start;
+static const char* main_js = _binary_main_js_start;
+static const char* v8flags = "${v8flags}";
+static unsigned int _v8flags_from_commandline = ${v8flags ? 1 : 0};
+`
+  return source
+}
+
+export { bindings, linkerScript, headerFile }

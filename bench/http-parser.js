@@ -1,7 +1,7 @@
 const { pico } = spin.load('pico')
 
-let repeat = Number(spin.args[2] || 1)
-const count = Number(spin.args[3] || 1000000)
+const repeat = Number(spin.args[2] || 1)
+const count = Number(spin.args[3] || 30000000)
 
 function httpState () {
   const u8 = new Uint8Array(HTTP_CTX_SZ + (HTTP_HEADER_SZ * MAXHEADERS))
@@ -10,9 +10,17 @@ function httpState () {
   return u32
 }
 
-function bench (fun) {
+function benchResponse () {
   const start = Date.now()
   for (let i = 0; i < count; i++) parseResponse()
+  const elapsed = Date.now() - start
+  const rate = Math.floor(count / (elapsed / 1000))
+  console.log(`time ${elapsed} ms rate ${rate}`)
+}
+
+function benchRequest () {
+  const start = Date.now()
+  for (let i = 0; i < count; i++) parseRequest()
   const elapsed = Date.now() - start
   const rate = Math.floor(count / (elapsed / 1000))
   console.log(`time ${elapsed} ms rate ${rate}`)
@@ -41,9 +49,9 @@ function parseResponse () {
   return pico.parseResponse(response, responseSize, info)
 }
 
-console.log(parseRequest())
-console.log(parseResponse())
+spin.assert(parseRequest() === parseResponse() && parseRequest() === 38)
 
-for (let i = 0; i < repeat; i++) bench()
-//bench(parseResponse)
-//bench(parseRequest)
+while (1) {
+  for (let i = 0; i < repeat; i++) benchResponse()
+  for (let i = 0; i < repeat; i++) benchRequest()
+}

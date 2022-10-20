@@ -1,4 +1,3 @@
-
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
@@ -16,9 +15,7 @@ namespace spin {
 namespace net {
 
 void socketSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
   int32_t v2 = Local<Integer>::Cast(args[2])->Value();
   int32_t rc = socket(v0, v1, v2);
@@ -88,9 +85,7 @@ int32_t connectFast(void* p, int32_t p0, void* p1, int32_t p2) {
 }
 
 void listenSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
   int32_t rc = listen(v0, v1);
   args.GetReturnValue().Set(Number::New(isolate, rc));
@@ -103,9 +98,7 @@ int32_t listenFast(void* p, int32_t p0, int32_t p1) {
 }
 
 void closeSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t rc = close(v0);
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }
@@ -205,9 +198,7 @@ int32_t pipe2Fast(void* p, void* p0, int32_t p1) {
 }
 
 void dup2Slow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
   int32_t rc = dup2(v0, v1);
   args.GetReturnValue().Set(Number::New(isolate, rc));
@@ -351,5 +342,3 @@ extern "C" {
     return (void*)spin::net::Init;
   }
 }
-
-

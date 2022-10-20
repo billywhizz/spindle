@@ -1,4 +1,3 @@
-
 #include <pico.h>
 #include <hescape.h>
 #include <spin.h>
@@ -186,5 +185,3 @@ extern "C" {
     return (void*)spin::pico::Init;
   }
 }
-
-

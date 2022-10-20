@@ -1,7 +1,7 @@
-
 #include <sys/resource.h>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <sys/timerfd.h>
 #include <spin.h>
 
 namespace spin {
@@ -60,7 +60,8 @@ void dlopenSlow(const FunctionCallbackInfo<Value> &args) {
 void dlopenFast(void* p, void* p0, int32_t p1, struct FastApiTypedArray* const p_ret) {
   const char* v0 = reinterpret_cast<const char*>(p0);
   int32_t v1 = p1;
-  void* r = dlopen(v0, v1);  ((void**)p_ret->data)[0] = r;
+  void* r = dlopen(v0, v1);
+  ((void**)p_ret->data)[0] = r;
 
 }
 
@@ -76,7 +77,8 @@ void dlsymSlow(const FunctionCallbackInfo<Value> &args) {
 void dlsymFast(void* p, void* p0, void* p1, struct FastApiTypedArray* const p_ret) {
   void* v0 = reinterpret_cast<void*>(p0);
   const char* v1 = reinterpret_cast<const char*>(p1);
-  void* r = dlsym(v0, v1);  ((void**)p_ret->data)[0] = r;
+  void* r = dlsym(v0, v1);
+  ((void**)p_ret->data)[0] = r;
 
 }
 
@@ -91,6 +93,38 @@ void dlcloseSlow(const FunctionCallbackInfo<Value> &args) {
 int32_t dlcloseFast(void* p, void* p0) {
   void* v0 = reinterpret_cast<void*>(p0);
   return dlclose(v0);
+}
+
+void timerfd_createSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  int32_t v1 = Local<Integer>::Cast(args[1])->Value();
+  int32_t rc = timerfd_create(v0, v1);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t timerfd_createFast(void* p, int32_t p0, int32_t p1) {
+  int32_t v0 = p0;
+  int32_t v1 = p1;
+  return timerfd_create(v0, v1);
+}
+
+void timerfd_settimeSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  int32_t v1 = Local<Integer>::Cast(args[1])->Value();
+  const struct itimerspec* v2 = reinterpret_cast<const struct itimerspec*>((uint64_t)args[2]->NumberValue(context).ToChecked());
+  struct itimerspec* v3 = reinterpret_cast<struct itimerspec*>((uint64_t)args[3]->NumberValue(context).ToChecked());
+  int32_t rc = timerfd_settime(v0, v1, v2, v3);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t timerfd_settimeFast(void* p, int32_t p0, int32_t p1, void* p2, void* p3) {
+  int32_t v0 = p0;
+  int32_t v1 = p1;
+  const struct itimerspec* v2 = reinterpret_cast<const struct itimerspec*>(p2);
+  struct itimerspec* v3 = reinterpret_cast<struct itimerspec*>(p3);
+  return timerfd_settime(v0, v1, v2, v3);
 }
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target) {
@@ -147,6 +181,26 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunctionInfo* infodlclose = new v8::CFunctionInfo(*rcdlclose, 2, cargsdlclose);
   v8::CFunction* pFdlclose = new v8::CFunction((const void*)&dlcloseFast, infodlclose);
   SET_FAST_METHOD(isolate, module, "dlclose", pFdlclose, dlcloseSlow);
+
+  v8::CTypeInfo* cargstimerfd_create = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  cargstimerfd_create[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargstimerfd_create[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargstimerfd_create[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CTypeInfo* rctimerfd_create = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infotimerfd_create = new v8::CFunctionInfo(*rctimerfd_create, 3, cargstimerfd_create);
+  v8::CFunction* pFtimerfd_create = new v8::CFunction((const void*)&timerfd_createFast, infotimerfd_create);
+  SET_FAST_METHOD(isolate, module, "timerfd_create", pFtimerfd_create, timerfd_createSlow);
+
+  v8::CTypeInfo* cargstimerfd_settime = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  cargstimerfd_settime[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargstimerfd_settime[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargstimerfd_settime[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargstimerfd_settime[3] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  cargstimerfd_settime[4] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CTypeInfo* rctimerfd_settime = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infotimerfd_settime = new v8::CFunctionInfo(*rctimerfd_settime, 5, cargstimerfd_settime);
+  v8::CFunction* pFtimerfd_settime = new v8::CFunction((const void*)&timerfd_settimeFast, infotimerfd_settime);
+  SET_FAST_METHOD(isolate, module, "timerfd_settime", pFtimerfd_settime, timerfd_settimeSlow);
   SET_MODULE(isolate, target, "system", module);
 }
 } // namespace system
@@ -157,5 +211,3 @@ extern "C" {
     return (void*)spin::system::Init;
   }
 }
-
-

@@ -8,7 +8,8 @@ FLAGS=${CFLAGS}
 LFLAG=${LFLAGS}
 MODULE_DIR=modules
 SPIN_HOME=$(shell pwd)
-MODULES=modules/pico/binding.o modules/pico/pico.o modules/pico/hescape.o modules/pico/picohttpparser.o modules/net/net.o modules/loop/loop.o modules/system/system.o
+MODULES=modules/system/system.a modules/loop/loop.a modules/net/net.a modules/pico/pico.a
+LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js
 
 .PHONY: help clean
 
@@ -23,7 +24,9 @@ deps/v8/libv8_monolith.a: ## download v8 monolithic library for linking
 builtins.o: ## compile builtins with build dependencies
 	gcc builtins.S -c -o builtins.o
 
-pre:
+gen:
+	./spin tools/idl.js --link ${LIBS} > builtins.S
+	./spin tools/idl.js --header ${LIBS} ${MODULES} > main.h
 	./spin tools/idl.js modules/system/system.js > modules/system/system.cc
 	./spin tools/idl.js modules/pico/pico.js > modules/pico/pico.cc
 	./spin tools/idl.js modules/net/net.js > modules/net/net.cc
@@ -48,11 +51,12 @@ module: ## build a shared library for a module
 	CFLAGS="$(FLAGS)" LFLAGS="${LFLAG}" SPIN_HOME="$(SPIN_HOME)" $(MAKE) -C ${MODULE_DIR}/${MODULE}/ library
 
 all:
-	$(MAKE) pre
+	$(MAKE) gen
 	$(MAKE) MODULE=net module
 	$(MAKE) MODULE=system module
 	$(MAKE) MODULE=loop module
 	$(MAKE) MODULE=pico module
+	rm builtins.o
 	$(MAKE) builtins.o compile main debug
 
 clean: ## tidy up

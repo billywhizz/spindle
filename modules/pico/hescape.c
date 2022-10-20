@@ -19,7 +19,7 @@
 # define unlikely(x) (x)
 #endif
 
-static const uint8_t *ESCAPED_STRING[] = {
+static const char *ESCAPED_STRING[] = {
   "",
   "&quot;",
   "&amp;",
@@ -32,11 +32,11 @@ static const uint8_t es2[] = {
   38, 0, 35, 0, 120, 0, 50, 0, 55, 0, 59, 0
 };
 
-static const uint8_t *ESCAPED_STRING2[] = {
+static const char *ESCAPED_STRING2[] = {
   "\0\0",
   "&\0q\0u\0o\0t\0;\0",
   "&\0a\0m\0p\0;\0",
-  es2,
+  (char*)es2,
   "&\0l\0t\0;\0",
   "&\0g\0t\0;\0",
 };
@@ -124,15 +124,13 @@ append_escaped_buf16(uint8_t *rbuf, size_t rbuf_i, size_t esc_i, size_t *esize)
 size_t
 hesc_escape_html(uint8_t *rbuf, const uint8_t *buf, size_t size)
 {
-  size_t asize = 0, esc_i, esize = 0, i = 0, rbuf_i = 0;
-  const uint8_t *esc;
-
+  size_t esc_i = 0, esize = 0, i = 0, rbuf_i = 0;
 # ifdef __SSE4_2__
   __m128i escapes5 = _mm_loadu_si128((const __m128i *)"\"&'<>");
   while (likely(size - i >= 16)) {
     int found = 0;
     if (unlikely((esc_i = HTML_ESCAPE_TABLE[buf[i]]) == 0)) {
-      i = find_char_fast(buf, i, size, escapes5, 5, &found);
+      i = find_char_fast((char*)buf, i, size, escapes5, 5, &found);
       if (!found) break;
       esc_i = HTML_ESCAPE_TABLE[buf[i]];
     }
@@ -166,15 +164,14 @@ hesc_escape_html(uint8_t *rbuf, const uint8_t *buf, size_t size)
 size_t
 hesc_escape_html16(uint8_t *rbuf, const uint8_t *buf, size_t size)
 {
-  size_t asize = 0, esc_i, esize = 0, i = 0, rbuf_i = 0;
-  const uint8_t *esc;
+  size_t esc_i = 0, esize = 0, i = 0, rbuf_i = 0;
 
 # ifdef __SSE4_2__
   __m128i escapes5 = _mm_loadu_si128((const __m128i *)"\"&'<>");
   while (likely(size - i >= 16)) {
     int found = 0;
     if (unlikely((esc_i = HTML_ESCAPE_TABLE[buf[i]]) == 0)) {
-      i = find_char_fast(buf, i, size, escapes5, 5, &found);
+      i = find_char_fast((char*)buf, i, size, escapes5, 5, &found);
       if (!found) break;
       esc_i = HTML_ESCAPE_TABLE[buf[i]];
     }

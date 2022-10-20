@@ -472,6 +472,10 @@ void spin::Modules(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(m);
 }
 
+void spin::RunMicroTasks(const FunctionCallbackInfo<Value> &args) {
+  args.GetIsolate()->PerformMicrotaskCheckpoint();
+}
+
 void spin::NextTick(const FunctionCallbackInfo<Value>& args) {
   args.GetIsolate()->EnqueueMicrotask(args[0].As<Function>());
 }
@@ -686,6 +690,7 @@ void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, version, "v8", String::NewFromUtf8(isolate, 
     v8::V8::GetVersion()).ToLocalChecked());
   SET_MODULE(isolate, target, "version", version);
+  SET_METHOD(isolate, target, "runMicroTasks", RunMicroTasks);
   SET_METHOD(isolate, target, "nextTick", NextTick);
   SET_METHOD(isolate, target, "compile", Compile);
   SET_METHOD(isolate, target, "builtin", Builtin);

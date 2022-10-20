@@ -27,10 +27,19 @@ const api = {
     parameters: ['pointer'],
     pointers: ['void*'],
     result: 'i32'
+  },
+  timerfd_create: {
+    parameters: ['i32', 'i32'],
+    result: 'i32'
+  },
+  timerfd_settime: {
+    parameters: ['i32', 'i32', 'pointer', 'pointer'],
+    pointers: [, , 'const struct itimerspec*', 'struct itimerspec*'],
+    result: 'i32'
   }
 }
 
-const includes = ['sys/resource.h', 'unistd.h', 'dlfcn.h']
+const includes = ['sys/resource.h', 'unistd.h', 'dlfcn.h', 'sys/timerfd.h']
 const name = 'system'
 
 export { api, includes, name }

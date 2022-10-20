@@ -11,7 +11,10 @@ int main(int argc, char** argv) {
   }
   V8::Initialize();
   register_builtins();
-  spin::CreateIsolate(argc, argv, smol_js, smol_js_len, spin::hrtime(), GLOBALOBJ);
+  // todo. create isolate on a separate thread and wait for it
+  // we can then spin up multiple isolates
+  // need thread safe shared data
+  spin::CreateIsolate(argc, argv, main_js, main_js_len, spin::hrtime(), GLOBALOBJ);
   V8::Dispose();
   platform.reset();
   return 0;

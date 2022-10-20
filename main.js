@@ -16,31 +16,6 @@ function assert (condition, message) {
   }
 }
 
-class TextEncoder {
-  encode (str) {
-    return new Uint8Array(spin.calloc(1, str))
-  }
-
-  encodeInto (str, buf) {
-    
-  }
-}
-
-class TextDecoder {
-  decode (u8) {
-    return spin.readString(u8.buffer, u8.byteLength, u8.byteOffset)
-  }
-}
-
-global.TextEncoder = TextEncoder
-global.TextDecoder = TextDecoder
-
-const encoder = new TextEncoder()
-const decoder = new TextDecoder()
-
-spin.encode = str => encoder.encode(str)
-spin.decode = bytes => decoder.decode(bytes)
-
 spin.assert = assert
 
 global.console = {
@@ -49,17 +24,23 @@ global.console = {
 }
 
 global.onUnhandledRejection = err => {
-  spin.error(`${AG}${err.message}${AD}\n${err.stack}`)
+  console.error(`${AG}${err.message}${AD}\n${err.stack}`)
+  // todo: exit? maybe with a flag
 }
 
-try {
-  const { main, serve } = await import(spin.args[1] || 'app.js')
-  if (main) {
-    await main(...spin.args.slice(2))
+if (spin.args.length >= 2) {
+  // todo: catch this in c++
+  try {
+    const { main, serve } = await import(spin.args[1])
+    if (main) {
+      await main(...spin.args.slice(2))
+    }
+    if (serve) {
+      await serve(...spin.args.slice(2))
+    }
+  } catch (err) {
+    //console.error(err.stack)
   }
-  if (serve) {
-    await serve(...spin.args.slice(2))
-  }
-} catch (err) {
-  //console.error(err.stack)
+} else {
+  console.log(JSON.stringify(spin.version))
 }

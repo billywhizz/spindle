@@ -54,7 +54,6 @@ int parse_request(char* next, ssize_t bytes, httpRequest* req) {
 
 int parse_response(char* next, ssize_t bytes, httpResponse* res) {
   const char* status_message;
-  const char* path;
   struct phr_header headers[JUST_MAX_HEADERS];
   res->num_headers = JUST_MAX_HEADERS;
   int nread = phr_parse_response(next, bytes,

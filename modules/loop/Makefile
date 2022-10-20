@@ -9,6 +9,7 @@ help:
 
 library: ## compile shared library and dependencies
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -I$(SPIN_HOME) -I$(SPIN_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter -o ${MODULE}.o ${MODULE}.cc
+	ar crsT ${MODULE}.a ${MODULE}.o
 	$(CC) -g -static-libstdc++ -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug
 	strip --strip-debug --strip-unneeded ${MODULE}.so

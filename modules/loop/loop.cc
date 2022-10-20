@@ -1,4 +1,3 @@
-
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <spin.h>
@@ -7,9 +6,7 @@ namespace spin {
 namespace loop {
 
 void createSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t rc = epoll_create1(v0);
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }
@@ -58,9 +55,7 @@ int32_t waitFast(void* p, int32_t p0, void* p1, int32_t p2, int32_t p3) {
 }
 
 void closeSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t rc = close(v0);
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }
@@ -120,5 +115,3 @@ extern "C" {
     return (void*)spin::loop::Init;
   }
 }
-
-
