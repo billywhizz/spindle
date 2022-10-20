@@ -24,7 +24,7 @@ deps/v8/libv8_monolith.a: ## download v8 monolithic library for linking
 builtins.o: ## compile builtins with build dependencies
 	gcc builtins.S -c -o builtins.o
 
-gen:
+gen: ## generate source from definitions
 	./spin tools/idl.js --link ${LIBS} > builtins.S
 	./spin tools/idl.js --header ${LIBS} ${MODULES} > main.h
 	./spin tools/idl.js modules/system/system.js > modules/system/system.cc
@@ -32,14 +32,14 @@ gen:
 	./spin tools/idl.js modules/net/net.js > modules/net/net.cc
 	./spin tools/idl.js modules/loop/loop.js > modules/loop/loop.cc
 
-compile:
+compile: ## compile the runtime
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter main.cc
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter ${TARGET}.cc
 
-main: deps/v8/libv8_monolith.a ## link the main application dynamically
+main: deps/v8/libv8_monolith.a ## link the runtime dynamically
 	$(CC) -g -static-libstdc++ -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
-main-static: deps/v8/libv8_monolith.a ## link the main application statically
+main-static: deps/v8/libv8_monolith.a ## link the runtime statically
 	$(CC) -g -static -flto -pthread -m64 -Wl,--start-group deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} main.o -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 debug: ## strip debug symbols into a separate file
@@ -47,11 +47,14 @@ debug: ## strip debug symbols into a separate file
 	strip --strip-debug --strip-unneeded ${TARGET}
 	objcopy --add-gnu-debuglink=${TARGET}.debug ${TARGET}
 
-module: ## build a shared library for a module 
+module: ## build a module
 	CFLAGS="$(FLAGS)" LFLAGS="${LFLAG}" SPIN_HOME="$(SPIN_HOME)" $(MAKE) -C ${MODULE_DIR}/${MODULE}/ library
 
-all:
-	$(MAKE) gen
+scc: ## report on code size
+	scc --exclude-dir="deps,bench,tools,config,.devcontainer,.git,.vscode" --include-ext="cc,c,h,js" --wide --by-file ./
+
+all: ## build all the things
+	$(MAKE) deps/v8/libv8_monolith.a
 	$(MAKE) MODULE=net module
 	$(MAKE) MODULE=system module
 	$(MAKE) MODULE=loop module
