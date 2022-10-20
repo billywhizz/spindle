@@ -28,6 +28,38 @@ global.onUnhandledRejection = err => {
   // todo: exit? maybe with a flag
 }
 
+class RawBuffer {
+  constructor (size) {
+    const buf = new ArrayBuffer(size)
+    this.ptr = spin.getAddress(buf)
+    this.state = new Uint32Array(6)
+    this.u8 = new Uint8Array(buf)
+    spin.rawBuffer(buf, this.state.buffer)
+  }
+
+  get size () {
+    return this.state[0]
+  }
+
+  get id () {
+    return this.state[3]
+  }
+
+  get read () {
+    return this.state[1]
+  }
+
+  get written () {
+    return this.state[2]
+  }
+
+  slice (start = 0, end = this.size) {
+    return this.u8.subarray(start, end)
+  }
+}
+
+spin.RawBuffer = RawBuffer
+
 async function main () {
   try {
     const { main, serve } = await import(spin.args[1])

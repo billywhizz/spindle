@@ -42,6 +42,10 @@ const api = {
     parameters: ['i32', 'pointer', 'i32'],
     result: 'i32'
   },
+  write: {
+    parameters: ['i32', 'pointer', 'i32'],
+    result: 'i32'
+  },
   pipe2: {
     parameters: ['pointer', 'i32'],
     pointers: ['int*'],

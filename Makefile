@@ -3,18 +3,24 @@ RELEASE=0.1.13
 INSTALL=/usr/local/bin
 TARGET=spin
 GLOBALOBJ="spin"
-LIB=-ldl -lz
+LIB=-ldl
 FLAGS=${CFLAGS}
 LFLAG=${LFLAGS}
 MODULE_DIR=modules
 SPIN_HOME=$(shell pwd)
-MODULES=modules/system/system.a modules/loop/loop.a modules/net/net.a modules/pico/pico.a
+MODULES=modules/system/system.a modules/loop/loop.a modules/net/net.a modules/pico/pico.a deps/zlib-ng-2.0.6/libz.a
 LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js
 
 .PHONY: help clean
 
 help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_\.-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+deps/zlib-ng-2.0.6/libz.a: ## build zlib-ng
+	curl -L -o zlib-ng.tar.gz https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.0.6.tar.gz
+	tar -zxvf zlib-ng.tar.gz -C deps/
+	rm -f zlib-ng.tar.gz
+	cd deps/zlib-ng-2.0.6 && ./configure --zlib-compat && make -j 8
 
 deps/v8/libv8_monolith.a: ## download v8 monolithic library for linking
 	curl -L -o v8lib-$(RELEASE).tar.gz https://raw.githubusercontent.com/just-js/libv8/$(RELEASE)/v8.tar.gz
@@ -37,7 +43,8 @@ compile: ## compile the runtime
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter ${TARGET}.cc
 
 main: deps/v8/libv8_monolith.a ## link the runtime dynamically
-	$(CC) -g -static-libstdc++ -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -g -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+#	$(CC) -g -static-libstdc++ -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 main-static: deps/v8/libv8_monolith.a ## link the runtime statically
 	$(CC) -g -static -flto -pthread -m64 -Wl,--start-group deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${MODULES} main.o -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}

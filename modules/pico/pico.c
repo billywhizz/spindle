@@ -14,6 +14,7 @@ uint32_t zlib_deflate (uint8_t* src, uint32_t ssize, uint8_t* dest, uint32_t dsi
   deflate(stream, flush);
   uint32_t written = avail_out - stream->avail_out;
   deflateEnd(stream);
+  free(stream);
   return written;
 }
 
@@ -30,6 +31,7 @@ uint32_t zlib_inflate (uint8_t* src, uint32_t ssize, uint8_t* dest, uint32_t dsi
   inflate(stream, flush);
   uint32_t written = avail_out - stream->avail_out;
   inflateEnd(stream);
+  free(stream);
   return written;
 }
 
