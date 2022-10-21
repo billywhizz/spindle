@@ -1,4 +1,4 @@
-import { system } from './lib/system.js'
+import { system } from 'lib/system.js'
 
 const { getrusage, hrtime } = system
 

@@ -1,14 +1,13 @@
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Language                              Files     Lines   Blanks  Comments     Code Complexity Complexity/Lines
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-JavaScript                               11       797       88         3      706         71            64.73
+JavaScript                               10       730       83         2      645         62            49.98
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 lib/gen.js                                        210       24         0      186         40            21.51
 main.js                                           100       14         2       84         13            15.48
 lib/loop.js                                        89       12         0       77          6             7.79
 lib/system.js                                      79       14         0       65          2             3.08
 modules/net/net.js                                 75        2         0       73          0             0.00
-examples/httpd.js                                  67        5         1       61          9            14.75
 lib/net.js                                         57       10         0       47          1             2.13
 modules/system/system.js                           45        2         0       43          0             0.00
 modules/pico/pico.js                               43        2         0       41          0             0.00
@@ -38,11 +37,11 @@ modules/pico/picohttpparser.c                     665       50        56      55
 modules/pico/hescape.c                            203       21        16      166         27            16.27
 modules/pico/pico.c                                73        4         0       69          2             2.90
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                                    25      3823      372       160     3291        400           147.38
+Total                                    24      3756      367       159     3230        391           132.62
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $94,360
-Estimated Schedule Effort (organic) 5.61 months
-Estimated People Required (organic) 1.49
-Processed 139003 bytes, 0.139 megabytes (SI)
+Estimated Cost to Develop (organic) $92,524
+Estimated Schedule Effort (organic) 5.57 months
+Estimated People Required (organic) 1.48
+Processed 136998 bytes, 0.137 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 

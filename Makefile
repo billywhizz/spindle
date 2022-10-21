@@ -59,7 +59,7 @@ module: ## build a module
 	CFLAGS="$(FLAGS)" LFLAGS="${LFLAG}" SPIN_HOME="$(SPIN_HOME)" $(MAKE) -C ${MODULE_DIR}/${MODULE}/ library
 
 scc: ## report on code size
-	scc --exclude-dir="deps,bench,tools,config,.devcontainer,.git,.vscode" --include-ext="cc,c,h,js" --wide --by-file ./ > scc.txt
+	scc --exclude-dir="deps,bench,tools,config,.devcontainer,.git,.vscode,scratch,examples" --include-ext="cc,c,h,js" --wide --by-file ./ > scc.txt
 
 all: ## build all the things
 	$(MAKE) deps/zlib-ng-2.0.6/libz.a
