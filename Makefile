@@ -68,7 +68,7 @@ all: ## build all the things
 	$(MAKE) MODULE=system module
 	$(MAKE) MODULE=loop module
 	$(MAKE) MODULE=pico module
-	rm builtins.o
+	rm -f builtins.o
 	$(MAKE) builtins.o compile main debug
 
 clean: ## tidy up
