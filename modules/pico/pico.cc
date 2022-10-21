@@ -114,7 +114,7 @@ uint32_t escapeHTML16Fast(void* p, void* p0, void* p1, uint32_t p2) {
 void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
 
-  v8::CTypeInfo* cargszlibDeflate = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargszlibDeflate = (v8::CTypeInfo*)calloc(5, sizeof(v8::CTypeInfo));
   cargszlibDeflate[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargszlibDeflate[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   cargszlibDeflate[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
@@ -125,7 +125,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFzlibDeflate = new v8::CFunction((const void*)&zlibDeflateFast, infozlibDeflate);
   SET_FAST_METHOD(isolate, module, "zlibDeflate", pFzlibDeflate, zlibDeflateSlow);
 
-  v8::CTypeInfo* cargszlibInflate = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargszlibInflate = (v8::CTypeInfo*)calloc(5, sizeof(v8::CTypeInfo));
   cargszlibInflate[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargszlibInflate[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   cargszlibInflate[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
@@ -136,7 +136,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFzlibInflate = new v8::CFunction((const void*)&zlibInflateFast, infozlibInflate);
   SET_FAST_METHOD(isolate, module, "zlibInflate", pFzlibInflate, zlibInflateSlow);
 
-  v8::CTypeInfo* cargsparseRequest = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsparseRequest = (v8::CTypeInfo*)calloc(4, sizeof(v8::CTypeInfo));
   cargsparseRequest[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsparseRequest[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   cargsparseRequest[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
@@ -146,7 +146,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFparseRequest = new v8::CFunction((const void*)&parseRequestFast, infoparseRequest);
   SET_FAST_METHOD(isolate, module, "parseRequest", pFparseRequest, parseRequestSlow);
 
-  v8::CTypeInfo* cargsparseResponse = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsparseResponse = (v8::CTypeInfo*)calloc(4, sizeof(v8::CTypeInfo));
   cargsparseResponse[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsparseResponse[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   cargsparseResponse[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
@@ -156,7 +156,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFparseResponse = new v8::CFunction((const void*)&parseResponseFast, infoparseResponse);
   SET_FAST_METHOD(isolate, module, "parseResponse", pFparseResponse, parseResponseSlow);
 
-  v8::CTypeInfo* cargsescapeHTML = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsescapeHTML = (v8::CTypeInfo*)calloc(4, sizeof(v8::CTypeInfo));
   cargsescapeHTML[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsescapeHTML[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   cargsescapeHTML[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
@@ -166,7 +166,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFescapeHTML = new v8::CFunction((const void*)&escapeHTMLFast, infoescapeHTML);
   SET_FAST_METHOD(isolate, module, "escapeHTML", pFescapeHTML, escapeHTMLSlow);
 
-  v8::CTypeInfo* cargsescapeHTML16 = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsescapeHTML16 = (v8::CTypeInfo*)calloc(4, sizeof(v8::CTypeInfo));
   cargsescapeHTML16[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsescapeHTML16[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   cargsescapeHTML16[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);

@@ -721,7 +721,7 @@ void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, version, "v8", String::NewFromUtf8(isolate, 
     v8::V8::GetVersion()).ToLocalChecked());
   SET_MODULE(isolate, target, "version", version);
-  v8::CTypeInfo* cargshrtime = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargshrtime = (v8::CTypeInfo*)calloc(1, sizeof(v8::CTypeInfo));
   cargshrtime[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   v8::CTypeInfo* rcgetpid = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   v8::CFunctionInfo* infohrtime = new v8::CFunctionInfo(*rcgetpid, 1, cargshrtime);

@@ -130,7 +130,7 @@ int32_t timerfd_settimeFast(void* p, int32_t p0, int32_t p1, void* p2, void* p3)
 void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
 
-  v8::CTypeInfo* cargsclock_gettime = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsclock_gettime = (v8::CTypeInfo*)calloc(3, sizeof(v8::CTypeInfo));
   cargsclock_gettime[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsclock_gettime[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   cargsclock_gettime[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
@@ -139,7 +139,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFclock_gettime = new v8::CFunction((const void*)&clock_gettimeFast, infoclock_gettime);
   SET_FAST_METHOD(isolate, module, "clock_gettime", pFclock_gettime, clock_gettimeSlow);
 
-  v8::CTypeInfo* cargsgetpid = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsgetpid = (v8::CTypeInfo*)calloc(1, sizeof(v8::CTypeInfo));
   cargsgetpid[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
 
   v8::CTypeInfo* rcgetpid = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
@@ -147,7 +147,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFgetpid = new v8::CFunction((const void*)&getpidFast, infogetpid);
   SET_FAST_METHOD(isolate, module, "getpid", pFgetpid, getpidSlow);
 
-  v8::CTypeInfo* cargsgetrusage = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsgetrusage = (v8::CTypeInfo*)calloc(3, sizeof(v8::CTypeInfo));
   cargsgetrusage[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsgetrusage[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   cargsgetrusage[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
@@ -156,7 +156,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFgetrusage = new v8::CFunction((const void*)&getrusageFast, infogetrusage);
   SET_FAST_METHOD(isolate, module, "getrusage", pFgetrusage, getrusageSlow);
 
-  v8::CTypeInfo* cargsdlopen = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsdlopen = (v8::CTypeInfo*)calloc(3, sizeof(v8::CTypeInfo));
   cargsdlopen[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsdlopen[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   cargsdlopen[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
@@ -165,7 +165,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFdlopen = new v8::CFunction((const void*)&dlopenFast, infodlopen);
   SET_FAST_METHOD(isolate, module, "dlopen", pFdlopen, dlopenSlow);
 
-  v8::CTypeInfo* cargsdlsym = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsdlsym = (v8::CTypeInfo*)calloc(3, sizeof(v8::CTypeInfo));
   cargsdlsym[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsdlsym[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   cargsdlsym[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
@@ -174,7 +174,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFdlsym = new v8::CFunction((const void*)&dlsymFast, infodlsym);
   SET_FAST_METHOD(isolate, module, "dlsym", pFdlsym, dlsymSlow);
 
-  v8::CTypeInfo* cargsdlclose = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargsdlclose = (v8::CTypeInfo*)calloc(2, sizeof(v8::CTypeInfo));
   cargsdlclose[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargsdlclose[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
   v8::CTypeInfo* rcdlclose = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
@@ -182,7 +182,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFdlclose = new v8::CFunction((const void*)&dlcloseFast, infodlclose);
   SET_FAST_METHOD(isolate, module, "dlclose", pFdlclose, dlcloseSlow);
 
-  v8::CTypeInfo* cargstimerfd_create = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargstimerfd_create = (v8::CTypeInfo*)calloc(3, sizeof(v8::CTypeInfo));
   cargstimerfd_create[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargstimerfd_create[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   cargstimerfd_create[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
@@ -191,7 +191,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFtimerfd_create = new v8::CFunction((const void*)&timerfd_createFast, infotimerfd_create);
   SET_FAST_METHOD(isolate, module, "timerfd_create", pFtimerfd_create, timerfd_createSlow);
 
-  v8::CTypeInfo* cargstimerfd_settime = (v8::CTypeInfo*)calloc(8, sizeof(v8::CTypeInfo));
+  v8::CTypeInfo* cargstimerfd_settime = (v8::CTypeInfo*)calloc(5, sizeof(v8::CTypeInfo));
   cargstimerfd_settime[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargstimerfd_settime[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
   cargstimerfd_settime[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
