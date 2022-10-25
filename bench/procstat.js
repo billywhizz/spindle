@@ -16,7 +16,6 @@ const { read, lseek } = fs
 function check () {
   lseek(fd, 0, SEEK_SET)
   buf.written = read(fd, ptr, size)
-  console.log(buf.written)
 }
 
 function bench (count) {

@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 #include <sys/timerfd.h>
 #include <sys/wait.h>
+#include <sys/sysinfo.h>
 #include <spin.h>
 
 namespace spin {
@@ -50,11 +51,11 @@ int32_t usleepFast(void* p, uint32_t p0) {
 void getpidSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
 
-  int32_t rc = getpid();
+  uint32_t rc = getpid();
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }
 
-int32_t getpidFast(void* p) {
+uint32_t getpidFast(void* p) {
 
   return getpid();
 }
@@ -309,6 +310,18 @@ int32_t timesFast(void* p, void* p0) {
   return times(v0);
 }
 
+void get_avphys_pagesSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+
+  uint32_t rc = get_avphys_pages();
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+uint32_t get_avphys_pagesFast(void* p) {
+
+  return get_avphys_pages();
+}
+
 void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
 
@@ -340,7 +353,7 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CTypeInfo* cargsgetpid = (v8::CTypeInfo*)calloc(1, sizeof(v8::CTypeInfo));
   cargsgetpid[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
 
-  v8::CTypeInfo* rcgetpid = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CTypeInfo* rcgetpid = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
   v8::CFunctionInfo* infogetpid = new v8::CFunctionInfo(*rcgetpid, 1, cargsgetpid);
   v8::CFunction* pFgetpid = new v8::CFunction((const void*)&getpidFast, infogetpid);
   SET_FAST_METHOD(isolate, module, "getpid", pFgetpid, getpidSlow);
@@ -488,6 +501,14 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunctionInfo* infotimes = new v8::CFunctionInfo(*rctimes, 2, cargstimes);
   v8::CFunction* pFtimes = new v8::CFunction((const void*)&timesFast, infotimes);
   SET_FAST_METHOD(isolate, module, "times", pFtimes, timesSlow);
+
+  v8::CTypeInfo* cargsget_avphys_pages = (v8::CTypeInfo*)calloc(1, sizeof(v8::CTypeInfo));
+  cargsget_avphys_pages[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+
+  v8::CTypeInfo* rcget_avphys_pages = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
+  v8::CFunctionInfo* infoget_avphys_pages = new v8::CFunctionInfo(*rcget_avphys_pages, 1, cargsget_avphys_pages);
+  v8::CFunction* pFget_avphys_pages = new v8::CFunction((const void*)&get_avphys_pagesFast, infoget_avphys_pages);
+  SET_FAST_METHOD(isolate, module, "get_avphys_pages", pFget_avphys_pages, get_avphys_pagesSlow);
   SET_MODULE(isolate, target, "system", module);
 }
 } // namespace system

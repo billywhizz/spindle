@@ -17,7 +17,7 @@ const api = {
   },
   getpid: {
     parameters: [],
-    result: 'i32'
+    result: 'u32'
   },
   getrusage: {
     parameters: ['i32', 'pointer'],
@@ -99,11 +99,16 @@ const api = {
     parameters: ['i32'],
     pointers: [],
     result: 'u32'
+  },
+  get_avphys_pages: {
+    parameters: [],
+    pointers: [],
+    result: 'u32'
   }
 }
 // allow setting constants using dlsym
 // todo - all generating handlers/wrappers for callbacks - function pointers
-const includes = ['sys/times.h', 'sys/resource.h', 'unistd.h', 'dlfcn.h', 'sys/timerfd.h', 'sys/wait.h']
+const includes = ['sys/times.h', 'sys/resource.h', 'unistd.h', 'dlfcn.h', 'sys/timerfd.h', 'sys/wait.h', "sys/sysinfo.h"]
 const name = 'system'
 const libs = ['dl']
 const obj = ['system.a']
