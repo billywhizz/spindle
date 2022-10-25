@@ -29,8 +29,8 @@ function onTimer () {
   lastSys = stime
   lastTicks = ticks
   const total = usr + sys
-  console.log(`poll${id},${nevents},${cbs},${ops},${polls},${system.getrusage()[0]},${usr},${sys},${total}`)
-  //console.log(`${AG}${`poll${id}`.padEnd(5, ' ')}${AD} ${format(nevents, 8)} ${AY}size${AD} ${format(cbs, 12)} ${AY}callbacks${AD} ${format(ops, 12)} ${AY}ops${AD} ${format(polls, 12)} ${AY}polls${AD} ${format(system.getrusage()[0], 9)} ${AC}rss${AD} ${formatFloat(usr, 6, 2)} ${AG}usr${AD} ${formatFloat(sys, 6, 2)} ${AR}sys${AD} ${formatFloat(total, 6, 2)} ${AY}total${AD}`)
+  //console.log(`poll${id},${nevents},${cbs},${ops},${polls},${system.getrusage()[0]},${usr},${sys},${total}`)
+  console.log(`${AG}${`poll${id}`.padEnd(5, ' ')}${AD} ${format(nevents, 8)} ${AY}size${AD} ${format(cbs, 12)} ${AY}callbacks${AD} ${format(ops, 12)} ${AY}ops${AD} ${format(polls, 12)} ${AY}polls${AD} ${format(system.getrusage()[0], 9)} ${AC}rss${AD} ${formatFloat(usr, 6, 2)} ${AG}usr${AD} ${formatFloat(sys, 6, 2)} ${AR}sys${AD} ${formatFloat(total, 6, 2)} ${AY}total${AD}`)
   cbs = 0
   polls = 0
   ops = 0
@@ -44,7 +44,6 @@ const tb = new spin.RawBuffer(8)
 let cbs = 0
 let polls = 0
 let ops = 0
-const promises = []
 let [lastUsr, lastSys, , , lastTicks] = system.cputime()
 
 const resolvers = {}
@@ -66,10 +65,11 @@ resolvers.opresolve4 = (n) => {
 }
 
 const nevents = parseInt(spin.args[2] || 32)
+const promises = new Array(nevents).fill(1)
 const i32 = new Int32Array(nevents)
 const id = parseInt(spin.args[3] || '1', 10)
 let seconds = parseInt(spin.args[4] || '5', 10)
-for (let i = 0; i < nevents; i++) promises.push({ resolve: () => { ops++ } })
+for (let i = 0; i < nevents; i++) promises[i] = { resolve: () => { ops++ } }
 eventLoop.add(tfd, onTimer)
 const objs = new Array(nevents).fill(1)
 

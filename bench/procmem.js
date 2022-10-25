@@ -6,7 +6,7 @@ const { hrtime } = system
 const O_RDONLY = 0
 const SEEK_SET = 0
 
-const procFileName = spin.CString(`/proc/self/stat`)
+const procFileName = spin.CString(`/proc/meminfo`)
 const fd = fs.open(procFileName.ptr, O_RDONLY)
 const buf = new spin.RawBuffer(1024)
 
@@ -16,7 +16,6 @@ const { read, lseek } = fs
 function check () {
   lseek(fd, 0, SEEK_SET)
   buf.written = read(fd, ptr, size)
-  console.log(buf.written)
 }
 
 function bench (count) {
