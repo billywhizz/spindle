@@ -23,6 +23,7 @@ extern "C" {
   extern void* _register_loop();
   extern void* _register_net();
   extern void* _register_pico();
+  extern void* _register_fs();
 }
 
 void register_builtins() {
@@ -36,10 +37,12 @@ void register_builtins() {
   spin::modules["loop"] = &_register_loop;
   spin::modules["net"] = &_register_net;
   spin::modules["pico"] = &_register_pico;
+  spin::modules["fs"] = &_register_fs;
 }
 
 static unsigned int main_js_len = _binary_main_js_end - _binary_main_js_start;
 static const char* main_js = _binary_main_js_start;
 static const char* v8flags = "--stack-trace-limit=10 --use-strict --turbo-fast-api-calls";
 static unsigned int _v8flags_from_commandline = 1;
+static unsigned int _v8_threads = 1;
 

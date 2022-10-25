@@ -6,6 +6,18 @@
 #include <fcntl.h>
 #include <v8-fast-api-calls.h>
 
+#ifdef __cplusplus
+extern "C"
+    {
+#endif
+    extern 
+    int __xpg_strerror_r(int errcode,char* buffer,size_t length);
+    #define strerror_r __xpg_strerror_r
+
+#ifdef __cplusplus
+    }
+#endif
+
 namespace spin {
 
 using v8::String;
@@ -55,6 +67,7 @@ using v8::FixedArray;
 using v8::Number;
 using v8::MaybeLocal;
 using v8::PrimitiveArray;
+using v8::Persistent;
 
 struct FastApiTypedArray {
   uintptr_t length_;
@@ -89,6 +102,7 @@ enum HostDefinedOptions : int {
 typedef void *(*register_plugin)();
 extern std::map<std::string, builtin*> builtins;
 extern std::map<std::string, register_plugin> modules;
+extern std::map<int, spin::rawBuffer*> buffers;
 
 uint64_t hrtime();
 void builtins_add (const char* name, const char* source, 
@@ -119,7 +133,8 @@ void SET_VALUE(Isolate *isolate, Local<ObjectTemplate>
   recv, const char *name, Local<Value> value);
 
 template <typename F>
-void SET_FAST_METHOD(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, const char * name, F* fastCFunc, v8::FunctionCallback slowFunc) {
+void SET_FAST_METHOD(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, 
+  const char * name, F* fastCFunc, v8::FunctionCallback slowFunc) {
   v8::Local<v8::FunctionTemplate> funcTemplate = v8::FunctionTemplate::New(
     isolate,
     slowFunc,
@@ -137,7 +152,8 @@ void SET_FAST_METHOD(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, co
 }
 
 template <typename F>
-void SET_FAST_PROP(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, const char * name, F* fastCFunc, v8::FunctionCallback slowFunc) {
+void SET_FAST_PROP(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, 
+  const char * name, F* fastCFunc, v8::FunctionCallback slowFunc) {
   v8::Local<v8::FunctionTemplate> funcTemplate = v8::FunctionTemplate::New(
     isolate,
     slowFunc,
@@ -149,7 +165,8 @@ void SET_FAST_PROP(Isolate* isolate, v8::Local<v8::ObjectTemplate> exports, cons
     fastCFunc
   );
   enum v8::PropertyAttribute attributes =
-      static_cast<v8::PropertyAttribute>(v8::PropertyAttribute::ReadOnly | v8::PropertyAttribute::DontDelete);
+      static_cast<v8::PropertyAttribute>(v8::PropertyAttribute::ReadOnly | 
+      v8::PropertyAttribute::DontDelete);
   exports->SetAccessorProperty(
     v8::String::NewFromUtf8(isolate, name).ToLocalChecked(),
     funcTemplate,

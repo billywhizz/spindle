@@ -7,6 +7,7 @@ namespace pico {
 
 void zlibDeflateSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   uint8_t* v0 = reinterpret_cast<uint8_t*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   uint32_t v1 = Local<Integer>::Cast(args[1])->Value();
@@ -26,6 +27,7 @@ uint32_t zlibDeflateFast(void* p, void* p0, uint32_t p1, void* p2, uint32_t p3) 
 
 void zlibInflateSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   uint8_t* v0 = reinterpret_cast<uint8_t*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   uint32_t v1 = Local<Integer>::Cast(args[1])->Value();
@@ -45,6 +47,7 @@ uint32_t zlibInflateFast(void* p, void* p0, uint32_t p1, void* p2, uint32_t p3) 
 
 void parseRequestSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   char* v0 = reinterpret_cast<char*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   uint32_t v1 = Local<Integer>::Cast(args[1])->Value();
@@ -62,6 +65,7 @@ int32_t parseRequestFast(void* p, void* p0, uint32_t p1, void* p2) {
 
 void parseResponseSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   char* v0 = reinterpret_cast<char*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   uint32_t v1 = Local<Integer>::Cast(args[1])->Value();
@@ -79,6 +83,7 @@ int32_t parseResponseFast(void* p, void* p0, uint32_t p1, void* p2) {
 
 void escapeHTMLSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   uint8_t* v0 = reinterpret_cast<uint8_t*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   const uint8_t* v1 = reinterpret_cast<const uint8_t*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -96,6 +101,7 @@ uint32_t escapeHTMLFast(void* p, void* p0, void* p1, uint32_t p2) {
 
 void escapeHTML16Slow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   uint8_t* v0 = reinterpret_cast<uint8_t*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   const uint8_t* v1 = reinterpret_cast<const uint8_t*>((uint64_t)args[1]->NumberValue(context).ToChecked());

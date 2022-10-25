@@ -1,4 +1,3 @@
-const boot = spin.hrtime() - Number(spin.start)
 const AD = '\u001b[0m' // ANSI Default
 const A0 = '\u001b[30m' // ANSI Black
 const AR = '\u001b[31m' // ANSI Red
@@ -17,6 +16,13 @@ function assert (condition, message) {
   }
 }
 
+function CString (str) {
+  const buf = spin.calloc(1, `${str}\0`)
+  buf.ptr = spin.getAddress(buf)
+  return buf
+}
+
+spin.CString = CString
 spin.assert = assert
 
 global.console = {
@@ -25,17 +31,18 @@ global.console = {
 }
 
 global.onUnhandledRejection = err => {
-  console.error(`${AG}${err.message}${AD}\n${err.stack}`)
+  console.error(`${AR}${err.message}${AD}\n${err.stack}`)
   // todo: exit? maybe with a flag
 }
 
 class RawBuffer {
   constructor (size) {
-    const buf = new ArrayBuffer(size)
-    this.ptr = spin.getAddress(buf)
+    this.buf = new ArrayBuffer(size)
+    this.ptr = spin.getAddress(this.buf)
     this.state = new Uint32Array(6)
-    this.u8 = new Uint8Array(buf)
-    spin.rawBuffer(buf, this.state.buffer)
+    this.u8 = new Uint8Array(this.buf)
+    spin.rawBuffer(this.buf, this.state.buffer)
+    this.state[2] = this.state[0]
   }
 
   get size () {
@@ -54,6 +61,14 @@ class RawBuffer {
     return this.state[2]
   }
 
+  set written (bytes) {
+    this.state[2] = bytes
+  }
+
+  set read (bytes) {
+    this.state[1] = bytes
+  }
+
   slice (start = 0, end = this.size) {
     return this.u8.subarray(start, end)
   }
@@ -63,7 +78,10 @@ spin.RawBuffer = RawBuffer
 
 async function main () {
   try {
-    const { main, serve } = await import(spin.args[1])
+    const { main, serve, test } = await import(spin.args[1])
+    if (test) {
+      await test(...spin.args.slice(2))
+    }
     if (main) {
       await main(...spin.args.slice(2))
     }
@@ -71,7 +89,7 @@ async function main () {
       await serve(...spin.args.slice(2))
     }
   } catch (err) {
-    //console.error(err.stack)
+    console.error(`${AR}${err.message}${AD}\n${err.stack}`)
   }
 }
 
@@ -95,6 +113,5 @@ if (spin.args.length > 1) {
   }
 } else {
   const versions = spin.version
-  const ready = spin.hrtime() - Number(spin.start) - boot
-  console.log(`spin ${versions.spin} v8 ${versions.v8} boot ${boot} ready ${ready}`)
+  console.log(`spin ${versions.spin} v8 ${versions.v8}`)
 }

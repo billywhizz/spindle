@@ -15,7 +15,8 @@ namespace spin {
 namespace net {
 
 void socketSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
   int32_t v2 = Local<Integer>::Cast(args[2])->Value();
   int32_t rc = socket(v0, v1, v2);
@@ -31,6 +32,7 @@ int32_t socketFast(void* p, int32_t p0, int32_t p1, int32_t p2) {
 
 void setsockoptSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
@@ -52,6 +54,7 @@ int32_t setsockoptFast(void* p, int32_t p0, int32_t p1, int32_t p2, void* p3, in
 
 void bindSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   const sockaddr* v1 = reinterpret_cast<const sockaddr*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -69,6 +72,7 @@ int32_t bindFast(void* p, int32_t p0, void* p1, int32_t p2) {
 
 void connectSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   const sockaddr* v1 = reinterpret_cast<const sockaddr*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -85,7 +89,8 @@ int32_t connectFast(void* p, int32_t p0, void* p1, int32_t p2) {
 }
 
 void listenSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
   int32_t rc = listen(v0, v1);
   args.GetReturnValue().Set(Number::New(isolate, rc));
@@ -98,7 +103,8 @@ int32_t listenFast(void* p, int32_t p0, int32_t p1) {
 }
 
 void closeSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t rc = close(v0);
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }
@@ -110,6 +116,7 @@ int32_t closeFast(void* p, int32_t p0) {
 
 void accept4Slow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   sockaddr* v1 = reinterpret_cast<sockaddr*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -129,6 +136,7 @@ int32_t accept4Fast(void* p, int32_t p0, void* p1, void* p2, int32_t p3) {
 
 void sendSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   void* v1 = reinterpret_cast<void*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -148,6 +156,7 @@ int32_t sendFast(void* p, int32_t p0, void* p1, int32_t p2, uint32_t p3) {
 
 void recvSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   void* v1 = reinterpret_cast<void*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -167,6 +176,7 @@ int32_t recvFast(void* p, int32_t p0, void* p1, uint32_t p2, int32_t p3) {
 
 void readSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   void* v1 = reinterpret_cast<void*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -184,6 +194,7 @@ int32_t readFast(void* p, int32_t p0, void* p1, int32_t p2) {
 
 void writeSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   void* v1 = reinterpret_cast<void*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -201,6 +212,7 @@ int32_t writeFast(void* p, int32_t p0, void* p1, int32_t p2) {
 
 void pipe2Slow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int* v0 = reinterpret_cast<int*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
@@ -215,7 +227,8 @@ int32_t pipe2Fast(void* p, void* p0, int32_t p1) {
 }
 
 void dup2Slow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
   int32_t rc = dup2(v0, v1);
   args.GetReturnValue().Set(Number::New(isolate, rc));

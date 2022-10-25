@@ -5,7 +5,7 @@ std::map<std::string, spin::builtin*> spin::builtins;
 std::map<std::string, spin::register_plugin> spin::modules;
 uint32_t scriptId = 1;
 clock_t clock_id = CLOCK_MONOTONIC;
-std::map<int, spin::rawBuffer*> buffers;
+std::map<int, spin::rawBuffer*> spin::buffers;
 int bcount = 0;
 
 uint64_t spin::hrtime() {
@@ -209,7 +209,8 @@ v8::Local<v8::Module> checkModule(v8::MaybeLocal<v8::Module> maybeModule,
     printf("Error loading module!\n");
     exit(EXIT_FAILURE);
   }
-  v8::Maybe<bool> result = mod->InstantiateModule(cx, spin::OnModuleInstantiate);
+  v8::Maybe<bool> result = mod->InstantiateModule(cx, 
+    spin::OnModuleInstantiate);
   if (result.IsNothing()) {
     printf("\nCan't instantiate module.\n");
     exit(EXIT_FAILURE);
@@ -366,7 +367,6 @@ int spin::CreateIsolate(int argc, char** argv,
       try_catch.ReThrow();
       return 1;
     }
-/*
     Local<Value> func = globalInstance->Get(context, 
       String::NewFromUtf8Literal(isolate, "onExit", 
         NewStringType::kNormal)).ToLocalChecked();
@@ -383,11 +383,10 @@ int spin::CreateIsolate(int argc, char** argv,
       }
       statusCode = result.ToLocalChecked()->Uint32Value(context).ToChecked();
     }
-*/
   }
-  //cleanupIsolate(isolate);
-  //delete create_params.array_buffer_allocator;
-  //isolate = nullptr;
+  cleanupIsolate(isolate);
+  delete create_params.array_buffer_allocator;
+  isolate = nullptr;
   return statusCode;
 }
 
@@ -708,12 +707,6 @@ void spin::ReadUtf16(const FunctionCallbackInfo<Value> &args) {
     NewStringType::kNormal, buf->written).ToLocalChecked());
 }
 
-void spin::HRTime(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  uint64_t rc = spin::hrtime();
-  args.GetReturnValue().Set(Number::New(isolate, rc));
-}
-
 void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> version = ObjectTemplate::New(isolate);
   SET_VALUE(isolate, version, GLOBALOBJ, String::NewFromUtf8Literal(isolate, 
@@ -721,12 +714,6 @@ void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, version, "v8", String::NewFromUtf8(isolate, 
     v8::V8::GetVersion()).ToLocalChecked());
   SET_MODULE(isolate, target, "version", version);
-  v8::CTypeInfo* cargshrtime = (v8::CTypeInfo*)calloc(1, sizeof(v8::CTypeInfo));
-  cargshrtime[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
-  v8::CTypeInfo* rcgetpid = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
-  v8::CFunctionInfo* infohrtime = new v8::CFunctionInfo(*rcgetpid, 1, cargshrtime);
-  v8::CFunction* pFhrtime = new v8::CFunction((const void*)&spin::hrtime, infohrtime);
-  SET_FAST_METHOD(isolate, target, "hrtime", pFhrtime, HRTime);
   SET_METHOD(isolate, target, "runMicroTasks", RunMicroTasks);
   SET_METHOD(isolate, target, "nextTick", NextTick);
   SET_METHOD(isolate, target, "compile", Compile);

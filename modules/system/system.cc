@@ -1,7 +1,9 @@
+#include <sys/times.h>
 #include <sys/resource.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #include <sys/timerfd.h>
+#include <sys/wait.h>
 #include <spin.h>
 
 namespace spin {
@@ -9,6 +11,7 @@ namespace system {
 
 void clock_gettimeSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   timespec* v1 = reinterpret_cast<timespec*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -22,8 +25,31 @@ int32_t clock_gettimeFast(void* p, int32_t p0, void* p1) {
   return clock_gettime(v0, v1);
 }
 
+void exitSlow(const FunctionCallbackInfo<Value> &args) {
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  exit(v0);
+}
+
+void exitFast(void* p, int32_t p0, struct FastApiTypedArray* const p_ret) {
+  int32_t v0 = p0;
+  exit(v0);
+}
+
+void usleepSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  uint32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  int32_t rc = usleep(v0);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t usleepFast(void* p, uint32_t p0) {
+  uint32_t v0 = p0;
+  return usleep(v0);
+}
+
 void getpidSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   int32_t rc = getpid();
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }
@@ -35,6 +61,7 @@ int32_t getpidFast(void* p) {
 
 void getrusageSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   struct rusage* v1 = reinterpret_cast<struct rusage*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -50,6 +77,7 @@ int32_t getrusageFast(void* p, int32_t p0, void* p1) {
 
 void dlopenSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   const char* v0 = reinterpret_cast<const char*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
@@ -67,6 +95,7 @@ void dlopenFast(void* p, void* p0, int32_t p1, struct FastApiTypedArray* const p
 
 void dlsymSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   void* v0 = reinterpret_cast<void*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   const char* v1 = reinterpret_cast<const char*>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -84,6 +113,7 @@ void dlsymFast(void* p, void* p0, void* p1, struct FastApiTypedArray* const p_re
 
 void dlcloseSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   void* v0 = reinterpret_cast<void*>((uint64_t)args[0]->NumberValue(context).ToChecked());
   int32_t rc = dlclose(v0);
@@ -96,7 +126,8 @@ int32_t dlcloseFast(void* p, void* p0) {
 }
 
 void timerfd_createSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
   int32_t rc = timerfd_create(v0, v1);
   args.GetReturnValue().Set(Number::New(isolate, rc));
@@ -108,8 +139,21 @@ int32_t timerfd_createFast(void* p, int32_t p0, int32_t p1) {
   return timerfd_create(v0, v1);
 }
 
+void sleepSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  uint32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  uint32_t rc = sleep(v0);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+uint32_t sleepFast(void* p, uint32_t p0) {
+  uint32_t v0 = p0;
+  return sleep(v0);
+}
+
 void timerfd_settimeSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
@@ -127,6 +171,144 @@ int32_t timerfd_settimeFast(void* p, int32_t p0, int32_t p1, void* p2, void* p3)
   return timerfd_settime(v0, v1, v2, v3);
 }
 
+void forkSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+
+  int32_t rc = fork();
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t forkFast(void* p) {
+
+  return fork();
+}
+
+void waitpidSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+
+  Local<Context> context = isolate->GetCurrentContext();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  int* v1 = reinterpret_cast<int*>((uint64_t)args[1]->NumberValue(context).ToChecked());
+  int32_t v2 = Local<Integer>::Cast(args[2])->Value();
+  int32_t rc = waitpid(v0, v1, v2);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t waitpidFast(void* p, int32_t p0, void* p1, int32_t p2) {
+  int32_t v0 = p0;
+  int* v1 = reinterpret_cast<int*>(p1);
+  int32_t v2 = p2;
+  return waitpid(v0, v1, v2);
+}
+
+void execvpSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+
+  Local<Context> context = isolate->GetCurrentContext();
+  char* v0 = reinterpret_cast<char*>((uint64_t)args[0]->NumberValue(context).ToChecked());
+  char* const* v1 = reinterpret_cast<char* const*>((uint64_t)args[1]->NumberValue(context).ToChecked());
+  int32_t rc = execvp(v0, v1);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t execvpFast(void* p, void* p0, void* p1) {
+  char* v0 = reinterpret_cast<char*>(p0);
+  char* const* v1 = reinterpret_cast<char* const*>(p1);
+  return execvp(v0, v1);
+}
+
+void sysconfSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  uint32_t rc = sysconf(v0);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+uint32_t sysconfFast(void* p, int32_t p0) {
+  int32_t v0 = p0;
+  return sysconf(v0);
+}
+
+void pidfd_openSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  int32_t v1 = Local<Integer>::Cast(args[1])->Value();
+  uint32_t v2 = Local<Integer>::Cast(args[2])->Value();
+  int32_t rc = syscall(v0, v1, v2);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t pidfd_openFast(void* p, int32_t p0, int32_t p1, uint32_t p2) {
+  int32_t v0 = p0;
+  int32_t v1 = p1;
+  uint32_t v2 = p2;
+  return syscall(v0, v1, v2);
+}
+
+void getrlimitSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+
+  Local<Context> context = isolate->GetCurrentContext();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  struct rlimit* v1 = reinterpret_cast<struct rlimit*>((uint64_t)args[1]->NumberValue(context).ToChecked());
+  int32_t rc = getrlimit(v0, v1);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t getrlimitFast(void* p, int32_t p0, void* p1) {
+  int32_t v0 = p0;
+  struct rlimit* v1 = reinterpret_cast<struct rlimit*>(p1);
+  return getrlimit(v0, v1);
+}
+
+void setrlimitSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+
+  Local<Context> context = isolate->GetCurrentContext();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  const struct rlimit* v1 = reinterpret_cast<const struct rlimit*>((uint64_t)args[1]->NumberValue(context).ToChecked());
+  int32_t rc = setrlimit(v0, v1);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t setrlimitFast(void* p, int32_t p0, void* p1) {
+  int32_t v0 = p0;
+  const struct rlimit* v1 = reinterpret_cast<const struct rlimit*>(p1);
+  return setrlimit(v0, v1);
+}
+
+void strerror_rSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+
+  Local<Context> context = isolate->GetCurrentContext();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  char* v1 = reinterpret_cast<char*>((uint64_t)args[1]->NumberValue(context).ToChecked());
+  uint32_t v2 = Local<Integer>::Cast(args[2])->Value();
+  int32_t rc = strerror_r(v0, v1, v2);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t strerror_rFast(void* p, int32_t p0, void* p1, uint32_t p2) {
+  int32_t v0 = p0;
+  char* v1 = reinterpret_cast<char*>(p1);
+  uint32_t v2 = p2;
+  return strerror_r(v0, v1, v2);
+}
+
+void timesSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+
+  Local<Context> context = isolate->GetCurrentContext();
+  struct tms* v0 = reinterpret_cast<struct tms*>((uint64_t)args[0]->NumberValue(context).ToChecked());
+  int32_t rc = times(v0);
+  args.GetReturnValue().Set(Number::New(isolate, rc));
+}
+
+int32_t timesFast(void* p, void* p0) {
+  struct tms* v0 = reinterpret_cast<struct tms*>(p0);
+  return times(v0);
+}
+
 void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
 
@@ -138,6 +320,22 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunctionInfo* infoclock_gettime = new v8::CFunctionInfo(*rcclock_gettime, 3, cargsclock_gettime);
   v8::CFunction* pFclock_gettime = new v8::CFunction((const void*)&clock_gettimeFast, infoclock_gettime);
   SET_FAST_METHOD(isolate, module, "clock_gettime", pFclock_gettime, clock_gettimeSlow);
+
+  v8::CTypeInfo* cargsexit = (v8::CTypeInfo*)calloc(2, sizeof(v8::CTypeInfo));
+  cargsexit[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargsexit[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CTypeInfo* rcexit = new v8::CTypeInfo(v8::CTypeInfo::Type::kVoid);
+  v8::CFunctionInfo* infoexit = new v8::CFunctionInfo(*rcexit, 2, cargsexit);
+  v8::CFunction* pFexit = new v8::CFunction((const void*)&exitFast, infoexit);
+  SET_FAST_METHOD(isolate, module, "exit", pFexit, exitSlow);
+
+  v8::CTypeInfo* cargsusleep = (v8::CTypeInfo*)calloc(2, sizeof(v8::CTypeInfo));
+  cargsusleep[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargsusleep[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
+  v8::CTypeInfo* rcusleep = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infousleep = new v8::CFunctionInfo(*rcusleep, 2, cargsusleep);
+  v8::CFunction* pFusleep = new v8::CFunction((const void*)&usleepFast, infousleep);
+  SET_FAST_METHOD(isolate, module, "usleep", pFusleep, usleepSlow);
 
   v8::CTypeInfo* cargsgetpid = (v8::CTypeInfo*)calloc(1, sizeof(v8::CTypeInfo));
   cargsgetpid[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
@@ -191,6 +389,14 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunction* pFtimerfd_create = new v8::CFunction((const void*)&timerfd_createFast, infotimerfd_create);
   SET_FAST_METHOD(isolate, module, "timerfd_create", pFtimerfd_create, timerfd_createSlow);
 
+  v8::CTypeInfo* cargssleep = (v8::CTypeInfo*)calloc(2, sizeof(v8::CTypeInfo));
+  cargssleep[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargssleep[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
+  v8::CTypeInfo* rcsleep = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
+  v8::CFunctionInfo* infosleep = new v8::CFunctionInfo(*rcsleep, 2, cargssleep);
+  v8::CFunction* pFsleep = new v8::CFunction((const void*)&sleepFast, infosleep);
+  SET_FAST_METHOD(isolate, module, "sleep", pFsleep, sleepSlow);
+
   v8::CTypeInfo* cargstimerfd_settime = (v8::CTypeInfo*)calloc(5, sizeof(v8::CTypeInfo));
   cargstimerfd_settime[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
   cargstimerfd_settime[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
@@ -201,6 +407,87 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunctionInfo* infotimerfd_settime = new v8::CFunctionInfo(*rctimerfd_settime, 5, cargstimerfd_settime);
   v8::CFunction* pFtimerfd_settime = new v8::CFunction((const void*)&timerfd_settimeFast, infotimerfd_settime);
   SET_FAST_METHOD(isolate, module, "timerfd_settime", pFtimerfd_settime, timerfd_settimeSlow);
+
+  v8::CTypeInfo* cargsfork = (v8::CTypeInfo*)calloc(1, sizeof(v8::CTypeInfo));
+  cargsfork[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+
+  v8::CTypeInfo* rcfork = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infofork = new v8::CFunctionInfo(*rcfork, 1, cargsfork);
+  v8::CFunction* pFfork = new v8::CFunction((const void*)&forkFast, infofork);
+  SET_FAST_METHOD(isolate, module, "fork", pFfork, forkSlow);
+
+  v8::CTypeInfo* cargswaitpid = (v8::CTypeInfo*)calloc(4, sizeof(v8::CTypeInfo));
+  cargswaitpid[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargswaitpid[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargswaitpid[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  cargswaitpid[3] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CTypeInfo* rcwaitpid = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infowaitpid = new v8::CFunctionInfo(*rcwaitpid, 4, cargswaitpid);
+  v8::CFunction* pFwaitpid = new v8::CFunction((const void*)&waitpidFast, infowaitpid);
+  SET_FAST_METHOD(isolate, module, "waitpid", pFwaitpid, waitpidSlow);
+
+  v8::CTypeInfo* cargsexecvp = (v8::CTypeInfo*)calloc(3, sizeof(v8::CTypeInfo));
+  cargsexecvp[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargsexecvp[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  cargsexecvp[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CTypeInfo* rcexecvp = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infoexecvp = new v8::CFunctionInfo(*rcexecvp, 3, cargsexecvp);
+  v8::CFunction* pFexecvp = new v8::CFunction((const void*)&execvpFast, infoexecvp);
+  SET_FAST_METHOD(isolate, module, "execvp", pFexecvp, execvpSlow);
+
+  v8::CTypeInfo* cargssysconf = (v8::CTypeInfo*)calloc(2, sizeof(v8::CTypeInfo));
+  cargssysconf[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargssysconf[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CTypeInfo* rcsysconf = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
+  v8::CFunctionInfo* infosysconf = new v8::CFunctionInfo(*rcsysconf, 2, cargssysconf);
+  v8::CFunction* pFsysconf = new v8::CFunction((const void*)&sysconfFast, infosysconf);
+  SET_FAST_METHOD(isolate, module, "sysconf", pFsysconf, sysconfSlow);
+
+  v8::CTypeInfo* cargspidfd_open = (v8::CTypeInfo*)calloc(4, sizeof(v8::CTypeInfo));
+  cargspidfd_open[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargspidfd_open[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargspidfd_open[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargspidfd_open[3] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
+  v8::CTypeInfo* rcpidfd_open = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infopidfd_open = new v8::CFunctionInfo(*rcpidfd_open, 4, cargspidfd_open);
+  v8::CFunction* pFpidfd_open = new v8::CFunction((const void*)&pidfd_openFast, infopidfd_open);
+  SET_FAST_METHOD(isolate, module, "pidfd_open", pFpidfd_open, pidfd_openSlow);
+
+  v8::CTypeInfo* cargsgetrlimit = (v8::CTypeInfo*)calloc(3, sizeof(v8::CTypeInfo));
+  cargsgetrlimit[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargsgetrlimit[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargsgetrlimit[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CTypeInfo* rcgetrlimit = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infogetrlimit = new v8::CFunctionInfo(*rcgetrlimit, 3, cargsgetrlimit);
+  v8::CFunction* pFgetrlimit = new v8::CFunction((const void*)&getrlimitFast, infogetrlimit);
+  SET_FAST_METHOD(isolate, module, "getrlimit", pFgetrlimit, getrlimitSlow);
+
+  v8::CTypeInfo* cargssetrlimit = (v8::CTypeInfo*)calloc(3, sizeof(v8::CTypeInfo));
+  cargssetrlimit[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargssetrlimit[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargssetrlimit[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CTypeInfo* rcsetrlimit = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infosetrlimit = new v8::CFunctionInfo(*rcsetrlimit, 3, cargssetrlimit);
+  v8::CFunction* pFsetrlimit = new v8::CFunction((const void*)&setrlimitFast, infosetrlimit);
+  SET_FAST_METHOD(isolate, module, "setrlimit", pFsetrlimit, setrlimitSlow);
+
+  v8::CTypeInfo* cargsstrerror_r = (v8::CTypeInfo*)calloc(4, sizeof(v8::CTypeInfo));
+  cargsstrerror_r[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargsstrerror_r[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargsstrerror_r[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  cargsstrerror_r[3] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint32);
+  v8::CTypeInfo* rcstrerror_r = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infostrerror_r = new v8::CFunctionInfo(*rcstrerror_r, 4, cargsstrerror_r);
+  v8::CFunction* pFstrerror_r = new v8::CFunction((const void*)&strerror_rFast, infostrerror_r);
+  SET_FAST_METHOD(isolate, module, "strerror_r", pFstrerror_r, strerror_rSlow);
+
+  v8::CTypeInfo* cargstimes = (v8::CTypeInfo*)calloc(2, sizeof(v8::CTypeInfo));
+  cargstimes[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargstimes[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CTypeInfo* rctimes = new v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  v8::CFunctionInfo* infotimes = new v8::CFunctionInfo(*rctimes, 2, cargstimes);
+  v8::CFunction* pFtimes = new v8::CFunction((const void*)&timesFast, infotimes);
+  SET_FAST_METHOD(isolate, module, "times", pFtimes, timesSlow);
   SET_MODULE(isolate, target, "system", module);
 }
 } // namespace system

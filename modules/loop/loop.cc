@@ -6,7 +6,8 @@ namespace spin {
 namespace loop {
 
 void createSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t rc = epoll_create1(v0);
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }
@@ -18,6 +19,7 @@ int32_t createFast(void* p, int32_t p0) {
 
 void modifySlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t v1 = Local<Integer>::Cast(args[1])->Value();
@@ -37,6 +39,7 @@ int32_t modifyFast(void* p, int32_t p0, int32_t p1, int32_t p2, void* p3) {
 
 void waitSlow(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+
   Local<Context> context = isolate->GetCurrentContext();
   int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   struct epoll_event * v1 = reinterpret_cast<struct epoll_event *>((uint64_t)args[1]->NumberValue(context).ToChecked());
@@ -55,7 +58,8 @@ int32_t waitFast(void* p, int32_t p0, void* p1, int32_t p2, int32_t p3) {
 }
 
 void closeSlow(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  Isolate *isolate = args.GetIsolate();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
   int32_t rc = close(v0);
   args.GetReturnValue().Set(Number::New(isolate, rc));
 }

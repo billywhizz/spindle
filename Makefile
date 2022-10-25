@@ -8,7 +8,7 @@ FLAGS=${CFLAGS}
 LFLAG=${LFLAGS}
 MODULE_DIR=modules
 SPIN_HOME=$(shell pwd)
-MODULES=modules/system/system.a modules/loop/loop.a modules/net/net.a modules/pico/pico.a
+MODULES=modules/system/system.a modules/loop/loop.a modules/net/net.a modules/pico/pico.a modules/fs/fs.a
 LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js
 
 .PHONY: help clean
@@ -39,13 +39,14 @@ gen: ## generate source from definitions
 	./spin gen modules/pico/pico.js > modules/pico/pico.cc
 	./spin gen modules/net/net.js > modules/net/net.cc
 	./spin gen modules/loop/loop.js > modules/loop/loop.cc
+	./spin gen modules/fs/fs.js > modules/fs/fs.cc
 
 compile: ## compile the runtime
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter main.cc
 	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter ${TARGET}.cc
 
 main: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime dynamically
-	$(CC) -g -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -g -flto -rdynamic -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 main-static: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime statically
 	$(CC) -g -static-libgcc -static-libstdc++ -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
@@ -68,6 +69,7 @@ all: ## build all the things
 	$(MAKE) MODULE=system module
 	$(MAKE) MODULE=loop module
 	$(MAKE) MODULE=pico module
+	$(MAKE) MODULE=fs module
 	rm -f builtins.o
 	$(MAKE) builtins.o compile main debug
 
