@@ -81,6 +81,10 @@ void Poll3(const FunctionCallbackInfo<Value> &args) {
   handler->Call(context, undefined, size, argv).ToLocalChecked();
 }
 
+/* 
+This one shared an array of objects with JS and populates it with objects
+for the related events
+*/
 void Poll4(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Function> handler = Local<Function>::New(isolate, onEvent);
