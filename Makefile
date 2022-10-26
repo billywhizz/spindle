@@ -30,7 +30,7 @@ deps/v8/libv8_monolith.a: ## download v8 monolithic library for linking
 	rm -f v8lib-$(RELEASE).tar.gz
 
 builtins.o: ## compile builtins with build dependencies
-	gcc builtins.S -c -o builtins.o
+	gcc -flto builtins.S -c -o builtins.o
 
 gen: ## generate source from definitions
 	./spin gen --link ${LIBS} > builtins.S
@@ -42,14 +42,14 @@ gen: ## generate source from definitions
 	./spin gen modules/fs/fs.js > modules/fs/fs.cc
 
 compile: ## compile the runtime
-	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter main.cc
-	$(CC) -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -g -O3 -march=native -mtune=native -Wpedantic -Wall -Wextra -flto -Wno-unused-parameter ${TARGET}.cc
+	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter main.cc
+	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter ${TARGET}.cc
 
 main: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime dynamically
-	$(CC) -g -flto -rdynamic -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -flto -g -O3 -rdynamic -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 main-static: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime statically
-	$(CC) -g -static-libgcc -static-libstdc++ -flto -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -flto -g -O3 -static-libgcc -static-libstdc++ -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 debug: ## strip debug symbols into a separate file
 	objcopy --only-keep-debug ${TARGET} ${TARGET}.debug

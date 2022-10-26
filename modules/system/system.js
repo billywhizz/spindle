@@ -104,11 +104,17 @@ const api = {
     parameters: [],
     pointers: [],
     result: 'u32'
+  },
+  signal: {
+    parameters: ['i32', 'pointer'],
+    pointers: [, 'sighandler_t'],
+    rpointer: 'sighandler_t',
+    result: 'pointer'
   }
 }
 // allow setting constants using dlsym
 // todo - all generating handlers/wrappers for callbacks - function pointers
-const includes = ['sys/times.h', 'sys/resource.h', 'unistd.h', 'dlfcn.h', 'sys/timerfd.h', 'sys/wait.h', "sys/sysinfo.h"]
+const includes = ['sys/times.h', 'sys/resource.h', 'unistd.h', 'dlfcn.h', 'sys/timerfd.h', 'sys/wait.h', 'sys/sysinfo.h', 'signal.h']
 const name = 'system'
 const libs = ['dl']
 const obj = ['system.a']

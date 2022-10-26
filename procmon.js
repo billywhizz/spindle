@@ -45,11 +45,12 @@ class Process {
     if (pid === -1) throw new Error('Could not fork')
     if (pid === 0) {
       const { command, args, cargs } = createArgs(this.command, ...this.args)
-      const devnull = fs.open(CString('/dev/null').ptr, O_WRONLY)
-      net.dup2(devnull, 1)
-      net.dup2(devnull, 2)
+      //const devnull = fs.open(CString('/dev/null').ptr, O_WRONLY)
+      //net.dup2(devnull, 1)
+      //net.dup2(devnull, 2)
       this.foo = { command, args, cargs }
       system.execvp(command.ptr, args.ptr)
+      console.log(`execvp ${system.errno} : ${system.strerror()}`)
       system.exit(127)
     } else {
       this.pid = pid
@@ -57,7 +58,7 @@ class Process {
       this.procfd = fs.open(this.procFileName.ptr, O_RDONLY)
       this.fd = system.pidfd_open(pid)
       if (this.fd < 1) {
-        console.log(`${system.errno} : ${system.strerror(system.errno)}`)
+        console.log(`pidfd_open ${system.errno} : ${system.strerror()}`)
       }
       this.buf = new spin.RawBuffer(1024)
     }
@@ -68,7 +69,10 @@ class Process {
     const { procfd, buf } = this
     fs.lseek(procfd, 0, SEEK_SET)
     const bytes = fs.read(procfd, buf.ptr, buf.size)
-    if (bytes <= 0) console.log(bytes)
+    if (bytes <= 0) {
+      //console.log(`read ${system.errno} : ${system.strerror()}`)
+      return ''
+    }
     buf.state[2] = bytes
     return spin.readLatin1(buf.id).trim()
   }
@@ -79,7 +83,7 @@ function onProcessComplete (fd) {
   net.close(fd)
   const process = processes[fd]
   net.close(process.procfd)
-  const rc = waitpid(process.pid)
+  //const rc = waitpid(process.pid)
   addCompletion(process.pid, status[0])
   //console.log(`process.exit ${process.pid} exit ${status[0]} wait ${rc}`)
   delete processes[fd]
@@ -156,6 +160,11 @@ if (rc !== 0) console.error(system.strerror(system.errno))
 
 const numProcs = parseInt(spin.args[2] || '10')
 const sleepTime = parseInt(spin.args[3] || '30')
+const SIGCHLD = 17
+const SIG_IGN = 1
+
+system.signal(SIGCHLD, SIG_IGN)
+
 for (let i = 0; i < numProcs; i++) {
   spawn('/bin/sleep', (Math.ceil(Math.random() * sleepTime) + sleepTime).toString())
 }

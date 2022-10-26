@@ -5,6 +5,7 @@
 #include <sys/timerfd.h>
 #include <sys/wait.h>
 #include <sys/sysinfo.h>
+#include <signal.h>
 #include <spin.h>
 
 namespace spin {
@@ -322,6 +323,24 @@ uint32_t get_avphys_pagesFast(void* p) {
   return get_avphys_pages();
 }
 
+void signalSlow(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+
+  Local<Context> context = isolate->GetCurrentContext();
+  int32_t v0 = Local<Integer>::Cast(args[0])->Value();
+  sighandler_t v1 = reinterpret_cast<sighandler_t>((uint64_t)args[1]->NumberValue(context).ToChecked());
+  sighandler_t rc = signal(v0, v1);
+  args.GetReturnValue().Set(Number::New(isolate, reinterpret_cast<uint64_t>(rc)));
+}
+
+void signalFast(void* p, int32_t p0, void* p1, struct FastApiTypedArray* const p_ret) {
+  int32_t v0 = p0;
+  sighandler_t v1 = reinterpret_cast<sighandler_t>(p1);
+  sighandler_t r = signal(v0, v1);
+  ((sighandler_t*)p_ret->data)[0] = r;
+
+}
+
 void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
 
@@ -509,6 +528,15 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target) {
   v8::CFunctionInfo* infoget_avphys_pages = new v8::CFunctionInfo(*rcget_avphys_pages, 1, cargsget_avphys_pages);
   v8::CFunction* pFget_avphys_pages = new v8::CFunction((const void*)&get_avphys_pagesFast, infoget_avphys_pages);
   SET_FAST_METHOD(isolate, module, "get_avphys_pages", pFget_avphys_pages, get_avphys_pagesSlow);
+
+  v8::CTypeInfo* cargssignal = (v8::CTypeInfo*)calloc(3, sizeof(v8::CTypeInfo));
+  cargssignal[0] = v8::CTypeInfo(v8::CTypeInfo::Type::kV8Value);
+  cargssignal[1] = v8::CTypeInfo(v8::CTypeInfo::Type::kInt32);
+  cargssignal[2] = v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CTypeInfo* rcsignal = new v8::CTypeInfo(v8::CTypeInfo::Type::kUint64);
+  v8::CFunctionInfo* infosignal = new v8::CFunctionInfo(*rcsignal, 3, cargssignal);
+  v8::CFunction* pFsignal = new v8::CFunction((const void*)&signalFast, infosignal);
+  SET_FAST_METHOD(isolate, module, "signal", pFsignal, signalSlow);
   SET_MODULE(isolate, target, "system", module);
 }
 } // namespace system
