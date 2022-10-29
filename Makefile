@@ -80,22 +80,27 @@ scc: ## report on code size
 	scc --no-cocomo --exclude-dir="deps,bench,test,.devcontainer,.git,.vscode,scratch,example,doc,docker" --include-ext="cc,c,h,js" --gen --wide --by-file ./ > scc.txt
 
 minimal: ## minimal build with no modules or libs
+ifneq (,$(wildcard ./spin))
 	$(MAKE) gen-min
+endif
 	$(MAKE) deps/v8/libv8_monolith.a
 	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
 	rm -f builtins.o
 	$(MAKE) DEPS=deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a LIBS= MODULES= builtins.o compile main-static-libc++ debug
 
 minimal-static: ## minimal build with no modules or libs
+ifneq (,$(wildcard ./spin))
 	$(MAKE) gen-min
+endif
 	$(MAKE) deps/v8/libv8_monolith.a
 	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
 	rm -f builtins.o
 	$(MAKE) DEPS=deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a LIBS= MODULES= builtins.o compile main-static debug
 
 full: ## build with all libs and modules included
-	$(MAKE) gen
-	$(MAKE) clean
+ifneq (,$(wildcard ./spin))
+	$(MAKE) gen clean
+endif
 	$(MAKE) deps/zlib-ng-2.0.6/libz.a
 	$(MAKE) deps/v8/libv8_monolith.a
 	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
