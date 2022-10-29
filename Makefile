@@ -10,6 +10,7 @@ MODULE_DIR=module
 SPIN_HOME=$(shell pwd)
 MODULES=${MODULE_DIR}/system/system.a ${MODULE_DIR}/loop/loop.a ${MODULE_DIR}/net/net.a ${MODULE_DIR}/pico/pico.a ${MODULE_DIR}/fs/fs.a ${MODULE_DIR}/tcc/tcc.a
 LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js lib/tcc.js
+DEPS=deps/zlib-ng-2.0.6/libz.a
 
 .PHONY: help clean
 
@@ -42,25 +43,22 @@ gen: ## generate source from definitions
 	./spin gen ${MODULE_DIR}/fs/fs.js > ${MODULE_DIR}/fs/fs.cc
 	./spin gen ${MODULE_DIR}/tcc/tcc.js > ${MODULE_DIR}/tcc/tcc.cc
 
-minimal: ## minimal build with no modules or libs
+gen-min: ## generate source for minimal build
 	./spin gen --link > builtins.S
 	./spin gen --header > main.h
-	$(MAKE) deps/v8/libv8_monolith.a
-	rm -f builtins.o
-	$(MAKE) builtins.o compile main debug
 
 compile: ## compile the runtime
 	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter main.cc
 	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter ${TARGET}.cc
 
 main: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime dynamically
-	$(CC) -flto -g -O3 -rdynamic -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -flto -g -O3 -rdynamic -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 main-static: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime statically
-	$(CC) -flto -g -O3 -static -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -flto -g -O3 -static -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 main-static-libc++: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime statically
-	$(CC) -flto -g -O3 -static-libstdc++ -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -flto -g -O3 -static-libstdc++ -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 debug: ## strip debug symbols into a separate file
 	objcopy --only-keep-debug ${TARGET} ${TARGET}.debug
@@ -73,7 +71,19 @@ module: ## build a module
 scc: ## report on code size
 	scc --no-cocomo --exclude-dir="deps,bench,test,.devcontainer,.git,.vscode,scratch,example,doc,docker" --include-ext="cc,c,h,js" --gen --wide --by-file ./ > scc.txt
 
-all: ## build all the things
+minimal: ## minimal build with no modules or libs
+	$(MAKE) gen-min
+	$(MAKE) deps/v8/libv8_monolith.a
+	rm -f builtins.o
+	$(MAKE) DEPS= LIBS= MODULES= builtins.o compile main-static-libc++ debug
+
+minimal-static: ## minimal build with no modules or libs
+	$(MAKE) gen-min
+	$(MAKE) deps/v8/libv8_monolith.a
+	rm -f builtins.o
+	$(MAKE) DEPS= LIBS= MODULES= builtins.o compile main-static debug
+
+full: ## build with all libs and modules included
 	$(MAKE) gen
 	$(MAKE) clean
 	$(MAKE) deps/zlib-ng-2.0.6/libz.a
