@@ -3,13 +3,13 @@ RELEASE=0.1.13
 INSTALL=/usr/local/bin
 TARGET=spin
 GLOBALOBJ="spin"
-LIB=-ldl
+LIB=-ldl -lffi
 FLAGS=${CFLAGS}
 LFLAG=${LFLAGS}
-MODULE_DIR=modules
+MODULE_DIR=module
 SPIN_HOME=$(shell pwd)
-MODULES=modules/system/system.a modules/loop/loop.a modules/net/net.a modules/pico/pico.a modules/fs/fs.a
-LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js
+MODULES=${MODULE_DIR}/system/system.a ${MODULE_DIR}/loop/loop.a ${MODULE_DIR}/net/net.a ${MODULE_DIR}/pico/pico.a ${MODULE_DIR}/fs/fs.a ${MODULE_DIR}/tcc/tcc.a
+LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js lib/tcc.js
 
 .PHONY: help clean
 
@@ -35,11 +35,19 @@ builtins.o: ## compile builtins with build dependencies
 gen: ## generate source from definitions
 	./spin gen --link ${LIBS} > builtins.S
 	./spin gen --header ${LIBS} ${MODULES} > main.h
-	./spin gen modules/system/system.js > modules/system/system.cc
-	./spin gen modules/pico/pico.js > modules/pico/pico.cc
-	./spin gen modules/net/net.js > modules/net/net.cc
-	./spin gen modules/loop/loop.js > modules/loop/loop.cc
-	./spin gen modules/fs/fs.js > modules/fs/fs.cc
+	./spin gen ${MODULE_DIR}/system/system.js > ${MODULE_DIR}/system/system.cc
+	./spin gen ${MODULE_DIR}/pico/pico.js > ${MODULE_DIR}/pico/pico.cc
+	./spin gen ${MODULE_DIR}/net/net.js > ${MODULE_DIR}/net/net.cc
+	./spin gen ${MODULE_DIR}/loop/loop.js > ${MODULE_DIR}/loop/loop.cc
+	./spin gen ${MODULE_DIR}/fs/fs.js > ${MODULE_DIR}/fs/fs.cc
+	./spin gen ${MODULE_DIR}/tcc/tcc.js > ${MODULE_DIR}/tcc/tcc.cc
+
+minimal: ## minimal build with no modules or libs
+	./spin gen --link > builtins.S
+	./spin gen --header > main.h
+	$(MAKE) deps/v8/libv8_monolith.a
+	rm -f builtins.o
+	$(MAKE) builtins.o compile main debug
 
 compile: ## compile the runtime
 	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter main.cc
@@ -49,7 +57,10 @@ main: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime dyn
 	$(CC) -flto -g -O3 -rdynamic -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 main-static: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime statically
-	$(CC) -flto -g -O3 -static-libgcc -static-libstdc++ -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -flto -g -O3 -static -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+
+main-static-libc++: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime statically
+	$(CC) -flto -g -O3 -static-libstdc++ -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o deps/zlib-ng-2.0.6/libz.a ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 debug: ## strip debug symbols into a separate file
 	objcopy --only-keep-debug ${TARGET} ${TARGET}.debug
@@ -60,9 +71,11 @@ module: ## build a module
 	CFLAGS="$(FLAGS)" LFLAGS="${LFLAG}" SPIN_HOME="$(SPIN_HOME)" $(MAKE) -C ${MODULE_DIR}/${MODULE}/ library
 
 scc: ## report on code size
-	scc --exclude-dir="deps,bench,tools,config,.devcontainer,.git,.vscode,scratch,examples" --include-ext="cc,c,h,js" --wide --by-file ./ > scc.txt
+	scc --no-cocomo --exclude-dir="deps,bench,test,.devcontainer,.git,.vscode,scratch,example,doc,docker" --include-ext="cc,c,h,js" --gen --wide --by-file ./ > scc.txt
 
 all: ## build all the things
+	$(MAKE) gen
+	$(MAKE) clean
 	$(MAKE) deps/zlib-ng-2.0.6/libz.a
 	$(MAKE) deps/v8/libv8_monolith.a
 	$(MAKE) MODULE=net module
@@ -70,8 +83,19 @@ all: ## build all the things
 	$(MAKE) MODULE=loop module
 	$(MAKE) MODULE=pico module
 	$(MAKE) MODULE=fs module
+	$(MAKE) MODULE=tcc module
 	rm -f builtins.o
 	$(MAKE) builtins.o compile main debug
+
+docker-distroless: ## build a distroless docker image
+	$(MAKE) main-static debug
+	cp ./spin docker/
+	docker build -t spin -f docker/distroless.dockerfile ./docker
+
+docker-builder: ## build a docker image for building runtime
+	$(MAKE) main-static debug
+	cp ./spin docker/
+	docker build -t spin -f docker/distroless.dockerfile ./docker
 
 clean: ## tidy up
 	rm -f *.o
