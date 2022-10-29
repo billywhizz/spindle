@@ -3,14 +3,15 @@ RELEASE=0.1.13
 INSTALL=/usr/local/bin
 TARGET=spin
 GLOBALOBJ="spin"
-LIB=-ldl -lffi
+LIB=-ldl
 FLAGS=${CFLAGS}
 LFLAG=${LFLAGS}
 MODULE_DIR=module
 SPIN_HOME=$(shell pwd)
 MODULES=${MODULE_DIR}/system/system.a ${MODULE_DIR}/loop/loop.a ${MODULE_DIR}/net/net.a ${MODULE_DIR}/pico/pico.a ${MODULE_DIR}/fs/fs.a ${MODULE_DIR}/tcc/tcc.a
 LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js lib/tcc.js
-DEPS=deps/zlib-ng-2.0.6/libz.a
+FFI_VERSION=3.4.2
+DEPS=deps/zlib-ng-2.0.6/libz.a deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
 
 .PHONY: help clean
 
@@ -29,6 +30,13 @@ deps/v8/libv8_monolith.a: ## download v8 monolithic library for linking
 	curl -L -o v8lib-$(RELEASE).tar.gz https://raw.githubusercontent.com/just-js/libv8/$(RELEASE)/v8.tar.gz
 	tar -zxvf v8lib-$(RELEASE).tar.gz
 	rm -f v8lib-$(RELEASE).tar.gz
+
+deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a: ## download libffi
+	mkdir -p deps
+	curl -L -o libffi.tar.gz https://github.com/libffi/libffi/archive/refs/tags/v${FFI_VERSION}.tar.gz
+	tar -zxvf libffi.tar.gz -C deps/
+	rm -f libffi.tar.gz
+	cd deps/libffi-${FFI_VERSION} && ./autogen.sh && ./configure && make -j 8
 
 builtins.o: ## compile builtins with build dependencies
 	gcc -flto builtins.S -c -o builtins.o
@@ -74,20 +82,23 @@ scc: ## report on code size
 minimal: ## minimal build with no modules or libs
 	$(MAKE) gen-min
 	$(MAKE) deps/v8/libv8_monolith.a
+	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
 	rm -f builtins.o
-	$(MAKE) DEPS= LIBS= MODULES= builtins.o compile main-static-libc++ debug
+	$(MAKE) DEPS=deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a LIBS= MODULES= builtins.o compile main-static-libc++ debug
 
 minimal-static: ## minimal build with no modules or libs
 	$(MAKE) gen-min
 	$(MAKE) deps/v8/libv8_monolith.a
+	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
 	rm -f builtins.o
-	$(MAKE) DEPS= LIBS= MODULES= builtins.o compile main-static debug
+	$(MAKE) DEPS=deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a LIBS= MODULES= builtins.o compile main-static debug
 
 full: ## build with all libs and modules included
 	$(MAKE) gen
 	$(MAKE) clean
 	$(MAKE) deps/zlib-ng-2.0.6/libz.a
 	$(MAKE) deps/v8/libv8_monolith.a
+	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
 	$(MAKE) MODULE=net module
 	$(MAKE) MODULE=system module
 	$(MAKE) MODULE=loop module
