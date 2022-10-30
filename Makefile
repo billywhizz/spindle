@@ -53,13 +53,13 @@ compile: ## compile the runtime
 	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter ${TARGET}.cc
 
 main: ${DEPS} ## link the runtime dynamically
-	$(CC) -flto -g -O3 -rdynamic -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -flto -g -O3 -rdynamic -fvisibility=hidden -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET}
 
 main-static: ${DEPS} ## link the runtime statically
-	$(CC) -flto -g -O3 -static -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -flto -g -O3 -static -fvisibility=hidden -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET}
 
 main-static-libc++: ${DEPS} ## link the runtime statically
-	$(CC) -flto -g -O3 -rdynamic -static-libstdc++ -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+	$(CC) -flto -g -O3 -rdynamic -fvisibility=hidden -static-libstdc++ -static-libgcc -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET}
 
 debug: ## strip debug symbols into a separate file
 	objcopy --only-keep-debug ${TARGET} ${TARGET}.debug
