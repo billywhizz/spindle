@@ -5,7 +5,6 @@
 #include <map>
 #include <fcntl.h>
 #include <v8-fast-api-calls.h>
-#include <ffi.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -206,9 +205,6 @@ void ReadUtf8(const FunctionCallbackInfo<Value> &args);
 void ReadLatin1(const FunctionCallbackInfo<Value> &args);
 void ReadLatin1Address(const FunctionCallbackInfo<Value> &args);
 void RawBuffer(const FunctionCallbackInfo<Value> &args);
-
-void FFIPrepare(const FunctionCallbackInfo<Value> &args);
-void FFICall(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 

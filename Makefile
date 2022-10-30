@@ -8,10 +8,9 @@ FLAGS=${CFLAGS}
 LFLAG=${LFLAGS}
 MODULE_DIR=module
 SPIN_HOME=$(shell pwd)
-MODULES=${MODULE_DIR}/system/system.a ${MODULE_DIR}/loop/loop.a ${MODULE_DIR}/net/net.a ${MODULE_DIR}/pico/pico.a ${MODULE_DIR}/fs/fs.a ${MODULE_DIR}/tcc/tcc.a
-LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js lib/tcc.js
-FFI_VERSION=3.4.2
-DEPS=deps/zlib-ng-2.0.6/libz.a deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
+MODULES=${MODULE_DIR}/system/system.a ${MODULE_DIR}/loop/loop.a ${MODULE_DIR}/net/net.a ${MODULE_DIR}/pico/pico.a ${MODULE_DIR}/fs/fs.a
+LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js
+DEPS=deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a
 NPROCS=$(shell cat /proc/cpuinfo | grep processor | wc -l)
 
 .PHONY: help clean
@@ -32,13 +31,6 @@ deps/v8/libv8_monolith.a: ## download v8 monolithic library for linking
 	tar -zxvf v8lib-$(RELEASE).tar.gz
 	rm -f v8lib-$(RELEASE).tar.gz
 
-deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a: ## download libffi
-	mkdir -p deps
-	curl -L -o libffi.tar.gz https://github.com/libffi/libffi/archive/refs/tags/v${FFI_VERSION}.tar.gz
-	tar -zxvf libffi.tar.gz -C deps/
-	rm -f libffi.tar.gz
-	cd deps/libffi-${FFI_VERSION} && ./autogen.sh && ./configure --enable-static=yes --enable-shared=no --disable-docs && make -j ${NPROCS}
-
 builtins.o: ## compile builtins with build dependencies
 	gcc -flto builtins.S -c -o builtins.o
 
@@ -57,17 +49,17 @@ gen-min: ## generate source for minimal build
 	./spin gen --header > main.h
 
 compile: ## compile the runtime
-	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -I./deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/include/ -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter main.cc
-	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -I./deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/include/ -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter ${TARGET}.cc
+	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter main.cc
+	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter ${TARGET}.cc
 
-main: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime dynamically
+main: ${DEPS} ## link the runtime dynamically
 	$(CC) -flto -g -O3 -rdynamic -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
-main-static: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime statically
+main-static: ${DEPS} ## link the runtime statically
 	$(CC) -flto -g -O3 -static -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
-main-static-libc++: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime statically
-	$(CC) -flto -g -O3 -static-libstdc++ -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
+main-static-libc++: ${DEPS} ## link the runtime statically
+	$(CC) -flto -g -O3 -rdynamic -static-libstdc++ -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
 
 debug: ## strip debug symbols into a separate file
 	objcopy --only-keep-debug ${TARGET} ${TARGET}.debug
@@ -85,18 +77,16 @@ ifneq (,$(wildcard ./spin))
 	$(MAKE) gen-min
 endif
 	$(MAKE) deps/v8/libv8_monolith.a
-	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
 	rm -f builtins.o
-	$(MAKE) DEPS=deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a LIBS= MODULES= builtins.o compile main-static-libc++ debug
+	$(MAKE) LIBS= MODULES= builtins.o compile main-static-libc++ debug
 
 minimal-static: ## minimal build with no modules or libs
 ifneq (,$(wildcard ./spin))
 	$(MAKE) gen-min
 endif
 	$(MAKE) deps/v8/libv8_monolith.a
-	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
 	rm -f builtins.o
-	$(MAKE) DEPS=deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a LIBS= MODULES= builtins.o compile main-static debug
+	$(MAKE) LIBS= MODULES= builtins.o compile main-static debug
 
 full: ## build with all libs and modules included
 ifneq (,$(wildcard ./spin))
@@ -104,13 +94,11 @@ ifneq (,$(wildcard ./spin))
 endif
 	$(MAKE) deps/zlib-ng-2.0.6/libz.a
 	$(MAKE) deps/v8/libv8_monolith.a
-	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
 	$(MAKE) MODULE=net library
 	$(MAKE) MODULE=system library
 	$(MAKE) MODULE=loop library
 	$(MAKE) MODULE=pico library
 	$(MAKE) MODULE=fs library
-	$(MAKE) MODULE=tcc library
 	rm -f builtins.o
 	$(MAKE) builtins.o compile main-static-libc++ debug
 
@@ -121,11 +109,6 @@ docker-distroless: ## build a distroless docker image
 
 docker-builder: ## build a docker builder image for building spin from source
 	docker build -t spin-builder -f docker/builder.dockerfile ./docker
-
-docker-builder: ## build a docker image for building runtime
-	$(MAKE) main-static debug
-	cp ./spin docker/
-	docker build -t spin -f docker/distroless.dockerfile ./docker
 
 clean: ## tidy up
 	rm -f *.o

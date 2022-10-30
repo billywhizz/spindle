@@ -36,7 +36,7 @@ const api = {
 }
 
 const name = 'tcc'
-const includes = ['tcc.h']
+const includes = ['libtcc.h']
 const libs = ['']
 const obj = ['tcc.a']
 
