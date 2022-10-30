@@ -12,6 +12,7 @@ MODULES=${MODULE_DIR}/system/system.a ${MODULE_DIR}/loop/loop.a ${MODULE_DIR}/ne
 LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js lib/tcc.js
 FFI_VERSION=3.4.2
 DEPS=deps/zlib-ng-2.0.6/libz.a deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
+NPROCS=$(shell cat /proc/cpuinfo | grep processor | wc -l)
 
 .PHONY: help clean
 
@@ -23,7 +24,7 @@ deps/zlib-ng-2.0.6/libz.a: ## build zlib-ng
 	curl -L -o zlib-ng.tar.gz https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.0.6.tar.gz
 	tar -zxvf zlib-ng.tar.gz -C deps/
 	rm -f zlib-ng.tar.gz
-	cd deps/zlib-ng-2.0.6 && ./configure --zlib-compat && make -j 8
+	cd deps/zlib-ng-2.0.6 && ./configure --zlib-compat && make -j ${NPROCS}
 
 deps/v8/libv8_monolith.a: ## download v8 monolithic library for linking
 	mkdir -p deps
@@ -36,7 +37,7 @@ deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a: ## download libff
 	curl -L -o libffi.tar.gz https://github.com/libffi/libffi/archive/refs/tags/v${FFI_VERSION}.tar.gz
 	tar -zxvf libffi.tar.gz -C deps/
 	rm -f libffi.tar.gz
-	cd deps/libffi-${FFI_VERSION} && ./autogen.sh && ./configure && make -j 8
+	cd deps/libffi-${FFI_VERSION} && ./autogen.sh && ./configure --enable-static=yes --enable-shared=no --disable-docs && make -j ${NPROCS}
 
 builtins.o: ## compile builtins with build dependencies
 	gcc -flto builtins.S -c -o builtins.o
@@ -56,8 +57,8 @@ gen-min: ## generate source for minimal build
 	./spin gen --header > main.h
 
 compile: ## compile the runtime
-	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter main.cc
-	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter ${TARGET}.cc
+	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -std=c++17 -DV8_COMPRESS_POINTERS -I. -I./deps/v8/include -I./deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/include/ -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter main.cc
+	$(CC) -flto -g -O3 -c ${FLAGS} -DGLOBALOBJ='${GLOBALOBJ}' -DVERSION='"${RELEASE}"' -std=c++17 -DV8_COMPRESS_POINTERS -DV8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=0 -I. -I./deps/v8/include -I./deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/include/ -march=native -mtune=native -Wpedantic -Wall -Wextra -Wno-unused-parameter ${TARGET}.cc
 
 main: deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a ## link the runtime dynamically
 	$(CC) -flto -g -O3 -rdynamic -pthread -m64 -Wl,--start-group main.o deps/v8/libv8_monolith.a ${TARGET}.o builtins.o ${DEPS} ${MODULES} -Wl,--end-group ${LFLAG} ${LIB} -o ${TARGET} -Wl,-rpath=/usr/local/lib/${TARGET}
@@ -73,7 +74,7 @@ debug: ## strip debug symbols into a separate file
 	strip --strip-debug --strip-unneeded ${TARGET}
 	objcopy --add-gnu-debuglink=${TARGET}.debug ${TARGET}
 
-module: ## build a module
+library: ## build a module
 	CFLAGS="$(FLAGS)" LFLAGS="${LFLAG}" SPIN_HOME="$(SPIN_HOME)" $(MAKE) -C ${MODULE_DIR}/${MODULE}/ library
 
 scc: ## report on code size
@@ -104,19 +105,22 @@ endif
 	$(MAKE) deps/zlib-ng-2.0.6/libz.a
 	$(MAKE) deps/v8/libv8_monolith.a
 	$(MAKE) deps/libffi-${FFI_VERSION}/x86_64-pc-linux-gnu/.libs/libffi.a
-	$(MAKE) MODULE=net module
-	$(MAKE) MODULE=system module
-	$(MAKE) MODULE=loop module
-	$(MAKE) MODULE=pico module
-	$(MAKE) MODULE=fs module
-	$(MAKE) MODULE=tcc module
+	$(MAKE) MODULE=net library
+	$(MAKE) MODULE=system library
+	$(MAKE) MODULE=loop library
+	$(MAKE) MODULE=pico library
+	$(MAKE) MODULE=fs library
+	$(MAKE) MODULE=tcc library
 	rm -f builtins.o
-	$(MAKE) builtins.o compile main debug
+	$(MAKE) builtins.o compile main-static-libc++ debug
 
 docker-distroless: ## build a distroless docker image
 	$(MAKE) main-static debug
 	cp ./spin docker/
 	docker build -t spin -f docker/distroless.dockerfile ./docker
+
+docker-builder: ## build a docker builder image for building spin from source
+	docker build -t spin-builder -f docker/builder.dockerfile ./docker
 
 docker-builder: ## build a docker image for building runtime
 	$(MAKE) main-static debug

@@ -16,7 +16,12 @@ function assert (condition, message) {
   }
 }
 
-const replacer = (k, v) => (typeof v === 'bigint') ? (v < Number.MAX_SAFE_INTEGER ? Number(v) : `b${v.toString()}`) : v
+const replacer = (k, v) => {
+  return (typeof v === 'bigint') 
+    ? (v < Number.MAX_SAFE_INTEGER ? Number(v) : `b${v.toString()}`) 
+    : v
+}
+
 spin.stringify = (o, sp = '  ') => JSON.stringify(o, replacer, sp)
 
 function CString (str) {
