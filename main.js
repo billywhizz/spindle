@@ -27,6 +27,7 @@ spin.stringify = (o, sp = '  ') => JSON.stringify(o, replacer, sp)
 function CString (str) {
   const buf = spin.calloc(1, `${str}\0`)
   buf.ptr = spin.getAddress(buf)
+  buf.size = buf.byteLength - 1
   return buf
 }
 
