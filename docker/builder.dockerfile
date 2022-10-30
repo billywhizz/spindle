@@ -1,5 +1,5 @@
 FROM debian:bookworm-slim
-RUN apt update
+RUN apt update -y
 RUN apt install -y curl make g++ autoconf libtool
 WORKDIR /spindle
 RUN curl -L -o perf.tar.gz https://github.com/billywhizz/spindle/archive/refs/tags/perf.tar.gz
