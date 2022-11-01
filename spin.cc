@@ -262,7 +262,7 @@ void cleanupIsolate (v8::Isolate* isolate) {
 int spin::CreateIsolate(int argc, char** argv, 
   const char* main_src, unsigned int main_len, 
   const char* js, unsigned int js_len, struct iovec* buf, int fd,
-  uint64_t start, const char* globalobj, const char* scriptname) {
+  uint64_t start, const char* globalobj, const char* scriptname, int cleanup) {
   Isolate::CreateParams create_params;
   int statusCode = 0;
   create_params.array_buffer_allocator = 
@@ -367,6 +367,7 @@ int spin::CreateIsolate(int argc, char** argv,
       try_catch.ReThrow();
       return 1;
     }
+/*
     Local<Value> func = globalInstance->Get(context, 
       String::NewFromUtf8Literal(isolate, "onExit", 
         NewStringType::kNormal)).ToLocalChecked();
@@ -383,17 +384,18 @@ int spin::CreateIsolate(int argc, char** argv,
       }
       statusCode = result.ToLocalChecked()->Uint32Value(context).ToChecked();
     }
+*/
   }
-  cleanupIsolate(isolate);
-  delete create_params.array_buffer_allocator;
-  isolate = nullptr;
+  //cleanupIsolate(isolate);
+  //delete create_params.array_buffer_allocator;
+  //isolate = nullptr;
   return statusCode;
 }
 
 int spin::CreateIsolate(int argc, char** argv, const char* main_src, 
-  unsigned int main_len, uint64_t start, const char* globalobj) {
+  unsigned int main_len, uint64_t start, const char* globalobj, int cleanup) {
   return CreateIsolate(argc, argv, main_src, main_len, NULL, 0, NULL, 0, 
-    start, globalobj, "main.js");
+    start, globalobj, "main.js", cleanup);
 }
 
 void spin::Print(const FunctionCallbackInfo<Value> &args) {
@@ -686,6 +688,13 @@ void spin::WriteUtf16(const FunctionCallbackInfo<Value> &args) {
   );
 }
 
+void spin::ReadLatin1Address(const FunctionCallbackInfo<Value> &args) {
+  Local<BigInt> address = Local<BigInt>::Cast(args[0]);
+  uint8_t* str = reinterpret_cast<uint8_t*>(address->Uint64Value());
+  args.GetReturnValue().Set(String::NewFromOneByte(args.GetIsolate(), 
+    str, NewStringType::kNormal, -1).ToLocalChecked());
+}
+
 void spin::ReadLatin1(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
   args.GetReturnValue().Set(String::NewFromOneByte(args.GetIsolate(), 
@@ -721,20 +730,25 @@ void spin::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, target, "builtins", Builtins);
   SET_METHOD(isolate, target, "modules", Modules);
   SET_METHOD(isolate, target, "load", Load);
+
   SET_METHOD(isolate, target, "readFile", ReadFile);
+
   SET_METHOD(isolate, target, "calloc", Calloc);
   SET_METHOD(isolate, target, "readMemory", ReadMemory);
   SET_METHOD(isolate, target, "getAddress", GetAddress);
   SET_METHOD(isolate, target, "rawBuffer", RawBuffer);
+
   SET_METHOD(isolate, target, "writeUtf8", WriteUtf8);
   SET_METHOD(isolate, target, "writeLatin1", WriteLatin1);
   SET_METHOD(isolate, target, "writeUtf16", WriteUtf16);
   SET_METHOD(isolate, target, "readUtf8", ReadUtf8);
   SET_METHOD(isolate, target, "readLatin1", ReadLatin1);
+  SET_METHOD(isolate, target, "readLatin1Address", ReadLatin1Address);
   SET_METHOD(isolate, target, "readUtf16", ReadUtf16);
   SET_METHOD(isolate, target, "utf8Length", Utf8Length);
   SET_METHOD(isolate, target, "print", Print);
   SET_METHOD(isolate, target, "error", Error);
+
 #ifdef __BYTE_ORDER
   // These don't work on alpine. will have to investigate why not
   SET_VALUE(isolate, target, "BYTE_ORDER", 

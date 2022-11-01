@@ -16,9 +16,18 @@ function assert (condition, message) {
   }
 }
 
+const replacer = (k, v) => {
+  return (typeof v === 'bigint') 
+    ? (v < Number.MAX_SAFE_INTEGER ? Number(v) : `b${v.toString()}`) 
+    : v
+}
+
+spin.stringify = (o, sp = '  ') => JSON.stringify(o, replacer, sp)
+
 function CString (str) {
   const buf = spin.calloc(1, `${str}\0`)
   buf.ptr = spin.getAddress(buf)
+  buf.size = buf.byteLength - 1
   return buf
 }
 
@@ -35,6 +44,7 @@ global.onUnhandledRejection = err => {
   // todo: exit? maybe with a flag
 }
 
+// todo: raw buffer from pointer with size - no arraybuffer, just an address
 class RawBuffer {
   constructor (size) {
     this.buf = new ArrayBuffer(size)
@@ -75,6 +85,34 @@ class RawBuffer {
 }
 
 spin.RawBuffer = RawBuffer
+
+const _load = spin.load
+let _system
+
+function getSystem () {
+  if (_system) return _system
+  const lib = _load('system')
+  if (!lib) return
+  const { system } = lib
+  const _dlopen = system.dlopen
+  system.dlopen = (path = '') => _dlopen(CString(path).ptr, 1)
+  const _dlsym = system.dlsym
+  system.dlsym = (handle, sym = '') => _dlsym(handle, CString(sym).ptr)
+  _system = system
+  return system
+}
+
+spin.load = name => {
+  const lib = _load(name)
+  if (lib) return lib
+  const system = getSystem()
+  if (!system) return
+  const handle = system.dlopen(`module/${name}/${name}.so`)
+  if (!handle) return
+  const sym = system.dlsym(handle, `_register_${name}`)
+  if (!sym) return
+  return _load(BigInt(sym))
+}
 
 async function main () {
   try {

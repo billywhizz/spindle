@@ -18,8 +18,10 @@ int main(int argc, char** argv) {
   // we can then spin up multiple isolates
   // need thread safe shared data
   spin::CreateIsolate(argc, argv, main_js, main_js_len, spin::hrtime(), 
-    GLOBALOBJ);
-  //V8::Dispose();
-  //platform.reset();
+    GLOBALOBJ, _v8_cleanup);
+  if (_v8_cleanup) {
+    V8::Dispose();
+    platform.reset();
+  }
   return 0;
 }

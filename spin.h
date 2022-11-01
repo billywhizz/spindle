@@ -117,10 +117,11 @@ v8::MaybeLocal<v8::Module> OnModuleInstantiate(v8::Local<v8::Context> context,
 int CreateIsolate(int argc, char** argv, 
   const char* main, unsigned int main_len,
   const char* js, unsigned int js_len, struct iovec* buf, int fd,
-  uint64_t start, const char* globalobj, const char* scriptname);
+  uint64_t start, const char* globalobj, const char* scriptname,
+  int cleanup);
 int CreateIsolate(int argc, char** argv,
   const char* main, unsigned int main_len, uint64_t start,
-  const char* globalobj);
+  const char* globalobj, int cleanup);
 void PrintStackTrace(Isolate* isolate, const TryCatch& try_catch);
 void PromiseRejectCallback(PromiseRejectMessage message);
 void FreeMemory(void* buf, size_t length, void* data);
@@ -202,6 +203,7 @@ void WriteLatin1(const FunctionCallbackInfo<Value> &args);
 void ReadUtf16(const FunctionCallbackInfo<Value> &args);
 void ReadUtf8(const FunctionCallbackInfo<Value> &args);
 void ReadLatin1(const FunctionCallbackInfo<Value> &args);
+void ReadLatin1Address(const FunctionCallbackInfo<Value> &args);
 void RawBuffer(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);

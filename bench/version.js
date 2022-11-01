@@ -1,0 +1,1 @@
+console.log(globalThis.Bun ? Bun.version : spin.version.spin)

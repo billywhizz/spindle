@@ -1,16 +1,10 @@
 import { system } from 'lib/system.js'
 
-const { sysconf, hrtime } = system
+const { hrtime } = system
 
-const _SC_AVPHYS_PAGES = 86
-
-function meminfo () {
-  return sysconf(_SC_AVPHYS_PAGES)
-}
-
-function benchSysconf (count) {
+function bench (count) {
   const start = hrtime()
-  for (let i = 0; i < count; i++) meminfo()
+  for (let i = 0; i < count; i++) createBuffer()
   const elapsed = (hrtime() - start) / 1000000
   const rate = Math.floor(count / (elapsed / 1000))
   console.log(`time ${Math.floor(elapsed)} ms rate ${rate}`)
@@ -22,6 +16,10 @@ function run (fn, count, repeat = 10) {
 
 const repeat = Number(spin.args[2] || 10)
 
+function createBuffer () {
+  return new ArrayBuffer(4096)
+}
+
 while (1) {
-  run(benchSysconf, 3000000, repeat)
+  run(bench, 1000000, repeat)
 }
