@@ -10,9 +10,9 @@ const AW = '\u001b[37m' // ANSI White
 
 spin.colors = { AD, AB, A0, AR, AG, AY, AM, AC, AW }
 
-function assert (condition, message) {
+function assert (condition, message, ErrorType = Error) {
   if (!condition) {
-    throw new Error(message || "Assertion failed")
+    throw new ErrorType(message || "Assertion failed")
   }
 }
 

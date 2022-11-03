@@ -35,6 +35,9 @@ uint32_t zlib_inflate (uint8_t* src, uint32_t ssize, uint8_t* dest, uint32_t dsi
   return written;
 }
 
+// todo: read multiple headers in a single call - for pipelined
+// todo: spec compliance checks
+// todo: chunked parsing
 int parse_request(char* next, ssize_t bytes, httpRequest* req) {
   const char* method;
   const char* path;
