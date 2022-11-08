@@ -19,9 +19,9 @@ function httpState () {
 }
 
 function onSocketEvent (fd) {
-  const bytes = recv(fd, rPtr, BUFSIZE, 0)
+  const bytes = recv(fd, buf.ptr, BUFSIZE, 0)
   if (bytes > 0) {
-    const nread = pico.parseRequest(rPtr, bytes, info)
+    const nread = pico.parseRequest(buf.ptr, bytes, info)
     if (nread !== bytes) console.log(`${nread}:${bytes}`)
     send(fd, sPtr, size, 0)
     return
@@ -46,10 +46,9 @@ const HTTP_CTX_SZ = 32
 const HTTP_HEADER_SZ = 32
 const MAXHEADERS = 14
 const BUFSIZE = 16384
-const recvbuf = new ArrayBuffer(BUFSIZE)
+const buf = new spin.RawBuffer(BUFSIZE)
 const state = httpState()
 const info = state.ptr
-const rPtr = spin.getAddress(recvbuf)
 const sendbuf = spin.calloc(1, `HTTP/1.1 200 OK\r\nContent-Type: text/plain,charset=utf8\r\nContent-Length: 13\r\n\r\nHello, World!`)
 const sPtr = spin.getAddress(sendbuf)
 const size = sendbuf.byteLength
