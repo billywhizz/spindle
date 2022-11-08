@@ -10,6 +10,7 @@ const {
 } = net.constants
 const { sockaddr_in } = net.types
 const { EAGAIN } = system.constants
+const { SystemError } = system
 
 const modes = {
   Async: 0,
@@ -91,7 +92,7 @@ class Request {
   }
 }
 
-function serve (config) {
+function serve (fetch, config = {}) {
   function httpState () {
     const u8 = new Uint8Array(HTTP_CTX_SZ + (HTTP_HEADER_SZ * MAXHEADERS))
     const u32 = new Uint32Array(u8.buffer)
@@ -108,7 +109,15 @@ function serve (config) {
   function handleNonChunked (response) {
     const { contentType, status, body, fd } = response
     spin.writeLatin1(sendbuf.id, `${responses[contentType][status].fixed}${body.length}\r\n\r\n${body}`)
-    send(fd, sendbuf.ptr, sendbuf.written, 0)
+    const written = send(fd, sendbuf.ptr, sendbuf.written, 0)
+    if (written === sendbuf.written) return
+    if (written > 0 || system.errno === EAGAIN) {
+      console.log('write blocked')
+      return
+    }
+    console.log(system.strerror())
+    eventLoop.remove(fd)
+    close(fd)
   }
 
   function handleResponse (response, fd) {
@@ -131,7 +140,7 @@ function serve (config) {
             return
           }
           if (nargs === 1) {
-            const request = new Request(state, spin.readLatin1(buf.id))          
+            const request = new Request(state, spin.readLatin1(buf.id))
             handleResponse(fetch(request), fd)
             return
           }
@@ -155,7 +164,7 @@ function serve (config) {
     close(newfd)
   }
 
-  const { address = '127.0.0.1', port = 3000, fetch, serverName = 'p' } = config
+  const { address = '127.0.0.1', port = 3000, serverName = 'p' } = config
   const HTTP_CTX_SZ = 32
   const HTTP_HEADER_SZ = 32
   const MAXHEADERS = 14
@@ -165,10 +174,11 @@ function serve (config) {
   const sendbuf = new spin.RawBuffer(BUFSIZE)
   const eventLoop = new Loop()
   const sfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0)
-  setsockopt(sfd, SOL_SOCKET, SO_REUSEPORT, net.on, 32)
-  bind(sfd, sockaddr_in(address, port).address, SOCKADDR_LEN)
-  listen(sfd, 1024)
-  eventLoop.add(sfd, onConnect)
+  spin.assert(sfd !== -1, 'socket', SystemError)
+  spin.assert(setsockopt(sfd, SOL_SOCKET, SO_REUSEPORT, net.on, 32) === 0, 'setsockopt', SystemError)
+  spin.assert(bind(sfd, sockaddr_in(address, port).address, SOCKADDR_LEN) === 0, 'bind', SystemError)
+  spin.assert(listen(sfd, 1024) === 0, 'listen', SystemError)
+  spin.assert(eventLoop.add(sfd, onConnect) === 0, 'eventLoop.add', SystemError)
   const mode = fetch.constructor.name === 'AsyncFunction' ? modes.Async: modes.Sync
   const nargs = fetch.length
   console.log(`listening on ${address}:${port} with ${mode} handler with ${nargs} args`)
@@ -191,7 +201,7 @@ function serve (config) {
   createResponses()
   while (1) {
     spin.runMicroTasks()
-    if (eventLoop.poll(-1) === 0) break
+    if (eventLoop.poll(-1) <= 0) break
   }
 }
 

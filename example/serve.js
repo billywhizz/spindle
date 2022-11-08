@@ -1,7 +1,3 @@
-import { serve, Response } from 'example/http3.js'
+import { serve, Response } from 'example/http4.js'
 
-serve({
-  fetch: () => {
-    return new Response('Hello, World!')
-  }
-})
+serve(() => new Response('Hello, World!'))

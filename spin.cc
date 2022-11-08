@@ -127,7 +127,7 @@ void spin::FreeMemory(void* buf, size_t length, void* data) {
   free(buf);
 }
 
-char* readFile(char filename[]) {
+char* readFile2(char filename[]) {
   char* contents;
   std::ifstream file;
   file.open(filename, std::ifstream::ate);
@@ -150,7 +150,7 @@ char* readFile(char filename[]) {
   return contents;
 }
 
-char* readFile2(char filename[]) {
+char* readFile(char filename[]) {
   spin::builtin* b = spin::builtins[filename];
   if (b != nullptr) {
     char* contents = (char*)calloc(1, b->size);
@@ -698,7 +698,7 @@ void spin::ReadLatin1Address(const FunctionCallbackInfo<Value> &args) {
 void spin::ReadLatin1(const FunctionCallbackInfo<Value> &args) {
   rawBuffer* buf = buffers[Local<Integer>::Cast(args[0])->Value()];
   args.GetReturnValue().Set(String::NewFromOneByte(args.GetIsolate(), 
-    (uint8_t*)buf->data, 
+    (uint8_t*)buf->data + buf->read, 
     NewStringType::kNormal, buf->written).ToLocalChecked());
 }
 
