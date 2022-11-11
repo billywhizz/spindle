@@ -26,6 +26,7 @@ extern "C" {
   extern void* _register_net();
   extern void* _register_pico();
   extern void* _register_fs();
+  extern void* _register_html();
 }
 
 void register_builtins() {
@@ -40,6 +41,7 @@ void register_builtins() {
   spin::modules["net"] = &_register_net;
   spin::modules["pico"] = &_register_pico;
   spin::modules["fs"] = &_register_fs;
+  spin::modules["html"] = &_register_html;
 }
 
 static unsigned int main_js_len = _binary_main_js_end - _binary_main_js_start;

@@ -46,13 +46,25 @@ global.onUnhandledRejection = err => {
 
 // todo: raw buffer from pointer with size - no arraybuffer, just an address
 class RawBuffer {
-  constructor (size) {
-    this.buf = new ArrayBuffer(size)
-    this.ptr = spin.getAddress(this.buf)
+  constructor (size = 0) {
     this.state = new Uint32Array(6)
-    this.u8 = new Uint8Array(this.buf)
-    spin.rawBuffer(this.buf, this.state.buffer)
-    this.state[2] = this.state[0]
+    if (size) {
+      this.buf = new ArrayBuffer(size)
+      this.ptr = spin.getAddress(this.buf)
+      this.u8 = new Uint8Array(this.buf)
+      spin.rawBuffer(this.buf, this.state.buffer)
+      this.state[2] = this.state[0]
+    }
+  }
+
+  static fromBuffer (buffer) {
+    const rb = new RawBuffer(0)
+    rb.buf = buffer
+    rb.ptr = spin.getAddress(buffer)
+    rb.u8 = new Uint8Array(buffer)
+    spin.rawBuffer(buffer, rb.state.buffer)
+    rb.state[2] = rb.state[0]
+    return rb
   }
 
   get size () {

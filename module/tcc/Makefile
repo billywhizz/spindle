@@ -18,7 +18,7 @@ deps/tcc-${TCC_VERSION}/libtcc.a: ## dependencies
 library: deps/tcc-${TCC_VERSION}/libtcc.a ## compile shared library and dependencies
 	$(CC) -c -g -O3 -flto -fpermissive -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION}/ -I. -I$(SPIN_HOME) -I$(SPIN_HOME)/deps/v8/include -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter -o ${MODULE}.o ${MODULE}.cc
 	ar crsT ${MODULE}.a ${MODULE}.o deps/tcc-${TCC_VERSION}/libtcc.a
-	$(CC) -g -O3 -flto  -static-libstdc++ -shared -pthread -m64 -Wl,--start-group ${MODULE}.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
+	$(CC) -g -O3 -flto -static-libstdc++ -shared -pthread -m64 -Wl,--start-group ${MODULE}.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug
 	strip --strip-debug --strip-unneeded ${MODULE}.so
 

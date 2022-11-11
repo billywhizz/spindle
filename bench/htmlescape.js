@@ -1,8 +1,9 @@
 import { system } from 'lib/system.js'
-import { pico } from 'lib/pico.js'
 
-const { escapeHTML } = pico
 const { hrtime } = system
+const { assert } = spin
+
+const { html } = spin.load('html')
 
 var ma = /["'&<>]/;
 const Q = "&quot;"
@@ -44,7 +45,7 @@ function HTMLEscape(a) {
   return a
 }
 
-function benchSpindle (count) {
+function bench (count) {
   const start = hrtime()
   for (let i = 0; i < count; i++) escapeSpindle()
   const elapsed = (hrtime() - start) / 1000000
@@ -63,33 +64,29 @@ function benchJS (count) {
 const expected = /&lt;script&gt;alert\(&quot;This should not be displayed \d{16} in a browser alert box.&quot;\);&lt;\/script&gt;/
 const str = '<script>alert("This should not be displayed 0 in a browser alert box.");</script>'
 
-const payloads = []
-const spayloads = []
-const idx = new Uint16Array(1)
-for (let i = 0; i < Math.pow(2, 16); i++) {
-  payloads.push(spin.CString(str.replace('0', Math.floor(Math.random() * Math.pow(2, 31)).toString().padStart(16, '0'))))
-  spayloads.push(str.replace('0', Math.floor(Math.random() * Math.pow(2, 31)).toString().padStart(16, '0')))
-}
-
-const out = new spin.RawBuffer(4096)
+const bin = new ArrayBuffer(4096)
+const bout = new ArrayBuffer(4096)
+const escaper = html.escaper(bin, bout)
 
 function escapeSpindle () {
-  const payload = payloads[idx[0]++]
-  out.written = escapeHTML(out.ptr, payload.ptr, payload.size)
-  return spin.readLatin1(out.id)
+  return escaper.escape(payloads[idx[0]++])
 }
 
 function escapeJS () {
-  return HTMLEscape(spayloads[idx[0]++])
+  return HTMLEscape(payloads[idx[0]++])
 }
 
-let output = escapeSpindle()
-console.log(output)
-spin.assert(output.match(expected))
-output = escapeJS(str)
-spin.assert(output.match(expected))
+const payloads = new Array(Math.pow(2, 16)).fill('')
+const idx = new Uint16Array(1)
+for (let i = 0; i < Math.pow(2, 16); i++) {
+  const num = Math.floor(Math.random() * Math.pow(2, 31)).toString().padStart(16, '0')
+  payloads[i] = str.replace('0', num)
+  const escaped = escaper.escape(payloads[i])
+  assert(escaped.match(expected))
+  assert(escaped.indexOf(num) > 0)
+}
 
-for (let i = 0; i < 5; i++) {
-  benchSpindle(10000000)
-  benchJS(10000000)
+for (let i = 0; i < 100; i++) {
+  bench(10000000)
+  benchJS(3200000)
 }
