@@ -102,6 +102,7 @@ endif
 	$(MAKE) MODULE=loop library
 	$(MAKE) MODULE=pico library
 	$(MAKE) MODULE=fs library
+	$(MAKE) MODULE=html library
 	rm -f builtins.o
 	$(MAKE) builtins.o compile main-static-libc++ debug
 
