@@ -8,7 +8,7 @@ FLAGS=${CFLAGS}
 LFLAG=${LFLAGS}
 MODULE_DIR=module
 SPIN_HOME=$(shell pwd)
-MODULES=${MODULE_DIR}/system/system.a ${MODULE_DIR}/loop/loop.a ${MODULE_DIR}/net/net.a ${MODULE_DIR}/pico/pico.a ${MODULE_DIR}/fs/fs.a
+MODULES=${MODULE_DIR}/system/system.a ${MODULE_DIR}/loop/loop.a ${MODULE_DIR}/net/net.a ${MODULE_DIR}/pico/pico.a ${MODULE_DIR}/fs/fs.a ${MODULE_DIR}/html/html.a
 LIBS=lib/system.js lib/loop.js lib/net.js lib/pico.js lib/gen.js
 DEPS=deps/v8/libv8_monolith.a deps/zlib-ng-2.0.6/libz.a
 NPROCS=$(shell cat /proc/cpuinfo | grep processor | wc -l)
@@ -65,6 +65,9 @@ debug: ## strip debug symbols into a separate file
 	objcopy --only-keep-debug ${TARGET} ${TARGET}.debug
 	strip --strip-debug --strip-unneeded ${TARGET}
 	objcopy --add-gnu-debuglink=${TARGET}.debug ${TARGET}
+
+gen-library: ## generate source from definitions for a library
+	./spin gen ${MODULE_DIR}/${MODULE}/${MODULE}.js > ${MODULE_DIR}/${MODULE}/${MODULE}.cc
 
 library: ## build a module
 	CFLAGS="$(FLAGS)" LFLAGS="${LFLAG}" SPIN_HOME="$(SPIN_HOME)" $(MAKE) -C ${MODULE_DIR}/${MODULE}/ library
