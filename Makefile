@@ -1,5 +1,5 @@
 CC=g++
-RELEASE=0.1.13
+RELEASE=0.1.14
 INSTALL=/usr/local/bin
 TARGET=spin
 GLOBALOBJ="spin"
