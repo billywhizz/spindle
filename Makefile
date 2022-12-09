@@ -81,7 +81,7 @@ ifneq (,$(wildcard ./spin))
 endif
 	$(MAKE) deps/v8/libv8_monolith.a
 	rm -f builtins.o
-	$(MAKE) LIBS= MODULES= builtins.o compile main-static-libc++ debug
+	$(MAKE) LIBS=lib/gen.js MODULES= builtins.o compile main debug
 
 minimal-static: ## minimal build with no modules or libs
 ifneq (,$(wildcard ./spin))
@@ -89,7 +89,7 @@ ifneq (,$(wildcard ./spin))
 endif
 	$(MAKE) deps/v8/libv8_monolith.a
 	rm -f builtins.o
-	$(MAKE) LIBS= MODULES= builtins.o compile main-static debug
+	$(MAKE) LIBS=lib/gen.js MODULES= builtins.o compile main-static debug
 
 full: ## build with all libs and modules included
 ifneq (,$(wildcard ./spin))
@@ -104,7 +104,7 @@ endif
 	$(MAKE) MODULE=fs library
 	$(MAKE) MODULE=html library
 	rm -f builtins.o
-	$(MAKE) builtins.o compile main-static-libc++ debug
+	$(MAKE) builtins.o compile main debug
 
 docker-distroless: ## build a distroless docker image
 	$(MAKE) main-static debug
